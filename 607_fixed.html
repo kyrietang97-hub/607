@@ -1,0 +1,3056 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>607</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; background:#0a0a0c; color:#c8c8d0; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; font-size:14px; line-height:1.6; overflow:hidden; user-select:none; -webkit-user-select:none; }
+  #app { max-width:560px; margin:0 auto; height:100%; display:flex; flex-direction:column; background:#0a0a0c; position:relative; }
+  #topbar { padding:10px 16px 8px; padding-top:max(10px, env(safe-area-inset-top)); background:#0d0d10; border-bottom:1px solid #1a1a1e; flex-shrink:0; }
+  .bar-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; font-size:11px; color:#6a6a78; gap:8px; }
+  .bar-row b { font-weight:500; }
+  .bar-main { font-size:12px; color:#9a9aa8; }
+  .bar-main span { margin-right:10px; }
+  .bar-main .path-tag { font-size:10px; padding:1px 6px; border-radius:6px; margin-right:0; }
+  .path-tag.zhenhun { background:#0a1218; color:#6a8aa8; border:1px solid #1a2a3a; }
+  .path-tag.powang { background:#1a1010; color:#c8a0a0; border:1px solid #3a2020; }
+  .path-tag.tongling { background:#12101a; color:#9a6ac8; border:1px solid #2a1a3a; }
+  .hpbar { height:5px; background:#1a1a1e; border-radius:3px; overflow:hidden; margin-bottom:3px; }
+  .expbar { height:3px; background:#1a1a1e; border-radius:2px; overflow:hidden; margin-bottom:5px; }
+  .hpfill { height:100%; transition:width 0.18s ease-out; }
+  .hpfill.player { background:linear-gradient(90deg,#4a3a5a,#8a6aaa); }
+  .hpfill.ghost { background:linear-gradient(90deg,#6a2a2a,#a84a4a); }
+  .hpfill.exp { background:linear-gradient(90deg,#3a3a20,#8a8a40); }
+  #badges { display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; }
+  .badge { font-size:10px; padding:1px 6px; border-radius:8px; }
+  .badge.equip { background:#1a1508; color:#c8a850; border:1px solid #3a2a10; }
+  .badge.talent { background:#0a1a10; color:#6a9a6a; border:1px solid #1a3a20; }
+  .map-progress { display:flex; justify-content:center; gap:8px; margin-bottom:16px; }
+  .map-dot { width:8px; height:8px; border-radius:50%; background:#1a1a1e; border:1px solid #2a2a32; }
+  .map-dot.done { background:#4a4a58; border-color:#4a4a58; }
+  .map-dot.now { background:#c8a850; border-color:#c8a850; box-shadow:0 0 6px #c8a85066; }
+  .map-dot.boss { border-radius:2px; }
+  .path-card { border-left-width:3px; }
+  .path-card.zhenhun { border-left-color:#6a8aa8; }
+  .path-card.powang { border-left-color:#c8a0a0; }
+  .path-card.tongling { border-left-color:#9a6ac8; }
+  .path-card.selected { border-color:#c8a850; background:#1a1a20; }
+  #content { flex:1; overflow-y:auto; padding:20px 16px 24px; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; }
+  #actionbar { padding:12px 16px 20px; padding-bottom:max(20px, env(safe-area-inset-bottom)); background:#0d0d10; border-top:1px solid #1a1a1e; flex-shrink:0; display:flex; flex-direction:column; gap:8px; max-height:42vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .map-title { text-align:center; color:#8a8a98; font-size:13px; letter-spacing:3px; margin-bottom:6px; }
+  .map-sub { text-align:center; color:#4a4a58; font-size:11px; margin-bottom:24px; white-space:pre-wrap; }
+  .node-list { display:flex; flex-direction:column; gap:12px; }
+  .node-card { background:#131318; border:1px solid #222228; border-radius:8px; padding:16px; cursor:pointer; transition:all 0.15s; display:flex; align-items:center; gap:14px; min-height:64px; }
+  .node-card:active { border-color:#c8a850; transform:scale(0.98); }
+  .node-card:hover { border-color:#3a3a44; }
+  .node-card.disabled { opacity:0.35; cursor:not-allowed; }
+  .node-card.elite { border-color:#5a2a2a; }
+  .node-card.elite .node-icon { color:#c8a0a0; }
+  .node-card.normal { border-color:#2a3a2a; }
+  .node-card.normal .node-icon { color:#8aa88a; }
+  .node-card.hidden { border-color:#3a2a4a; }
+  .node-card.hidden .node-icon { color:#9a6ac8; }
+  .node-card.hidden .name { color:#9a6ac8; }
+  .node-card.shop { border-color:#3a2a1a; }
+  .node-card.shop .node-icon { color:#c8a850; }
+  .node-card.shop-challenge { border-color:#5a2020; }
+  .node-card.shop-challenge .node-icon { color:#c8a0a0; }
+  .node-card.empty { border-color:#1a1a1e; }
+  .node-icon { font-size:28px; width:40px; text-align:center; }
+  .node-info { flex:1; }
+  .node-info .name { color:#d8d8e0; font-size:15px; margin-bottom:2px; }
+  .node-info .desc { color:#6a6a78; font-size:12px; }
+  .node-info .risk { color:#8a5a5a; font-size:11px; margin-top:2px; }
+  .node-info .reward { color:#c8a850; font-size:11px; margin-top:2px; }
+  .story-text { color:#b8b8c4; font-size:14px; line-height:2.2; white-space:pre-wrap; margin-bottom:20px; opacity:0; transition:opacity 0.8s; }
+  .story-text.show { opacity:1; }
+  .story-text.dim { color:#6a6a78; font-style:italic; }
+  .story-text.warn { color:#a86060; }
+  .story-text.flash { animation:flash 0.8s infinite alternate; }
+  @keyframes flash { from { opacity:0.3; } to { opacity:1; } }
+  .story-text.repeat { animation:repeatShake 0.5s ease; }
+  @keyframes repeatShake { 0% { transform:translateX(0); } 25% { transform:translateX(-2px); } 75% { transform:translateX(2px); } 100% { transform:translateX(0); } }
+  .battle-header { margin-bottom:12px; }
+  .ghost-line { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .ghost-name { color:#c8a0a0; font-size:14px; letter-spacing:2px; }
+  .ghost-tag { font-size:10px; padding:1px 6px; border-radius:8px; margin-left:6px; }
+  .ghost-tag.elite { background:#2a1010; color:#c8a0a0; border:1px solid #5a2020; }
+  .ghost-tag.normal { background:#102010; color:#8aa88a; border:1px solid #2a3a2a; }
+  .ghost-tag.hidden { background:#1a102a; color:#9a6ac8; border:1px solid #3a2a4a; }
+  .ghost-intro { color:#8a8a98; font-size:14px; font-style:italic; margin-bottom:8px; white-space:pre-wrap; line-height:2.2; }
+  .intent { font-size:12px; padding:3px 10px; border-radius:12px; background:#1a1010; color:#c8a0a0; border:1px solid #3a2020; }
+  .intent.hidden { color:#4a4a58; border-color:#1a1a1e; background:#0d0d10; }
+  .intent.attack { color:#c8a0a0; border-color:#5a2020; background:#1a0a0a; }
+  .intent.defend { color:#6a8aa8; border-color:#1a2a3a; background:#0a1018; }
+  .intent.special { color:#c8a850; border-color:#4a3a10; background:#1a1508; }
+  .ghost-info { background:#0d0d10; border:1px solid #1a1a1e; border-radius:6px; padding:10px 14px; font-size:11px; color:#6a6a78; line-height:1.8; margin-bottom:12px; }
+  .ghost-info .label { color:#4a4a58; }
+  .ghost-info .value { color:#9a9aa8; }
+  .ghost-info .weak { color:#c8a850; }
+  .status-row { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+  .status-tag { font-size:10px; padding:2px 8px; border-radius:10px; }
+  .status-tag.buff { background:#0a1a10; color:#6a9a6a; border:1px solid #1a3a20; }
+  .status-tag.debuff { background:#1a1010; color:#c8a0a0; border:1px solid #3a2020; }
+  .status-tag.special { background:#1a1508; color:#c8a850; border:1px solid #3a2a10; }
+  .log-area { background:#0d0d10; border:1px solid #1a1a1e; border-radius:6px; padding:12px 14px; font-size:12px; color:#8a8a98; line-height:1.9; max-height:120px; overflow-y:auto; margin-bottom:12px; }
+  .log-area .dmg { color:#a86060; }
+  .log-area .heal { color:#6a9a6a; }
+  .log-area .block { color:#6a8aa8; }
+  .log-area .sys { color:#4a4a58; font-style:italic; }
+  .log-area .special { color:#c8a850; }
+  .log-area .flavor { color:#5a5a78; font-style:italic; }
+  .skill-slots { display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; margin-bottom:10px; }
+  .skill-slot { background:#131318; border:1px solid #2a2a32; border-radius:6px; padding:8px 4px; text-align:center; cursor:pointer; transition:all 0.15s; position:relative; min-height:80px; }
+  .skill-slot:active { transform:scale(0.95); }
+  .skill-slot:hover:not(.disabled):not(.empty) { border-color:#4a4a54; }
+  .skill-slot.disabled { opacity:0.3; cursor:not-allowed; }
+  .skill-slot.empty { border-style:dashed; border-color:#1a1a1e; color:#2a2a32; }
+  .skill-slot .cost { position:absolute; top:2px; left:4px; font-size:11px; color:#c8a850; font-weight:700; }
+  .skill-slot .cd { position:absolute; top:2px; right:4px; font-size:10px; color:#c8a850; font-weight:700; }
+  .skill-slot .cd.ready { color:#6a9a6a; }
+  .skill-slot .sname { color:#c8c8d0; font-size:11px; margin-bottom:2px; margin-top:10px; }
+  .skill-slot .sdesc { color:#6a6a78; font-size:9px; line-height:1.3; }
+  .energy-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; color:#6a6a78; }
+  .energy-row .en { color:#c8a850; font-size:15px; font-weight:600; }
+  .energy-row .crit { color:#8a6aaa; font-size:11px; }
+  .reward-title { text-align:center; color:#c8c8d0; font-size:15px; letter-spacing:3px; margin-bottom:20px; }
+  .reward-list { display:flex; flex-direction:column; gap:10px; }
+  .reward-card { background:#131318; border:1px solid #222228; border-radius:6px; padding:14px; cursor:pointer; transition:all 0.15s; }
+  .reward-card:active { border-color:#c8a850; }
+  .reward-card:hover { border-color:#3a3a44; }
+  .reward-card .name { color:#d8d8e0; font-size:14px; margin-bottom:4px; }
+  .reward-card .cost-line { color:#c8a850; font-size:11px; margin-bottom:4px; }
+  .reward-card .desc { color:#8a8a98; font-size:12px; }
+  .reward-card .flavor { color:#5a5a78; font-size:11px; font-style:italic; margin-top:4px; }
+  .reward-card.rarity-common { border-left:3px solid #4a4a54; }
+  .reward-card.rarity-rare { border-left:3px solid #4a6a8a; }
+  .reward-card.rarity-legend { border-left:3px solid #c8a850; }
+  .reward-card.bought { opacity:0.3; cursor:not-allowed; }
+  .reward-card .price { color:#c8a850; font-size:12px; margin-top:4px; }
+  .btn { background:#131318; border:1px solid #222228; color:#b8b8c4; padding:14px; font-size:14px; border-radius:6px; cursor:pointer; font-family:inherit; width:100%; transition:all 0.15s; min-height:48px; }
+  .btn:active { background:#1c1c24; }
+  .btn:hover { border-color:#3a3a44; }
+  .btn.primary { border-color:#3a3a44; color:#d8d8e0; }
+  .btn.ghost { background:transparent; border-color:#1a1a1e; color:#5a5a68; }
+  .btn.danger { border-color:#5a2020; color:#c8a0a0; }
+  .btn:disabled { opacity:0.35; cursor:not-allowed; }
+  .btn-row { display:flex; flex-direction:column; gap:8px; }
+  #toast { position:absolute; top:80px; left:50%; transform:translateX(-50%); background:#1a1a20; border:1px solid #2a2a32; color:#c8a850; padding:8px 16px; border-radius:4px; font-size:13px; opacity:0; pointer-events:none; transition:opacity 0.3s; z-index:200; white-space:nowrap; max-width:90%; text-align:center; }
+  #toast.show { opacity:1; }
+  .title-screen { padding:32px 20px 16px; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:min(100%, 420px); text-align:center; }
+  .title-screen .sub { color:#3a3a44; font-size:11px; letter-spacing:4px; margin-bottom:10px; }
+  .title-screen .main { color:#c8c8d0; font-size:56px; letter-spacing:14px; font-weight:200; margin-bottom:10px; line-height:1.1; }
+  .title-screen .tag { color:#4a4a58; font-size:12px; letter-spacing:2px; margin-bottom:20px; }
+  .title-screen .stats { color:#4a4a58; font-size:11px; line-height:1.9; margin-top:8px; margin-bottom:8px; }
+  .title-links { display:flex; flex-wrap:wrap; justify-content:center; gap:8px 14px; margin-top:20px; max-width:320px; }
+  .title-links button {
+    background:transparent; border:none; color:#6a6a78; font-size:12px; padding:6px 4px;
+    cursor:pointer; font-family:inherit; min-height:auto; width:auto; letter-spacing:1px;
+  }
+  .title-links button:active { color:#c8a850; }
+  #actionbar.title-mode { max-height:none; }
+  #actionbar.title-mode .btn { min-height:44px; padding:12px; }
+  @media (max-height: 640px) {
+    .title-screen { padding:20px 16px 8px; min-height:auto; }
+    .title-screen .main { font-size:44px; letter-spacing:10px; }
+    .title-screen .tag { margin-bottom:12px; }
+  }
+  .end-screen { padding:40px 24px; display:flex; flex-direction:column; justify-content:center; min-height:100%; }
+  .end-screen .verdict { font-size:28px; letter-spacing:8px; margin-bottom:28px; font-weight:300; text-align:center; }
+  .end-screen .verdict.win { color:#8a6aaa; }
+  .end-screen .verdict.lose { color:#8a4a4a; }
+  .end-screen .stat { color:#6a6a78; font-size:13px; margin-bottom:8px; text-align:center; }
+  .end-screen .stat b { color:#9a9aa8; }
+  .event-scene { color:#8a8a98; font-size:13px; line-height:2.2; text-align:center; margin-bottom:24px; white-space:pre-wrap; }
+  .safe-room { padding:32px 24px; display:flex; flex-direction:column; justify-content:center; min-height:60vh; }
+  .safe-room .title { text-align:center; color:#c8a850; font-size:18px; letter-spacing:6px; margin-bottom:32px; font-weight:300; }
+  .safe-room .text { text-align:center; color:#8a8a98; font-size:14px; line-height:2.2; white-space:pre-wrap; margin-bottom:32px; }
+  .choice-title { text-align:center; color:#c8c8d0; font-size:15px; letter-spacing:3px; margin-bottom:20px; }
+  .float-text { position: fixed; font-size: 20px; font-weight: 700; pointer-events: none; z-index: 400; animation: floatUp 0.8s ease-out forwards; }
+  @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.3); } }
+  .float-text.crit { color: #c8a850; font-size: 28px; text-shadow: 0 0 12px #c8a85088; }
+  .float-text.normal { color: #a86060; }
+  .float-text.heal { color: #6a9a6a; }
+  .float-text.block { color: #6a8aa8; }
+  @keyframes shake { 0%,100% { transform: translate(0,0); } 20% { transform: translate(-4px,2px); } 40% { transform: translate(4px,-2px); } 60% { transform: translate(-3px,-3px); } 80% { transform: translate(3px,3px); } }
+  #app.shake { animation: shake 0.3s; }
+  @keyframes critFlash { 0% { background: #c8a850; opacity: 0.15; } 100% { background: #c8a850; opacity: 0; } }
+  #crit-flash { position: fixed; inset: 0; pointer-events: none; z-index: 350; opacity: 0; }
+  #crit-flash.active { animation: critFlash 0.3s; }
+  #ad-overlay { position: fixed; inset: 0; background: #000; z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; color: #c8c8d0; padding: 24px; }
+  #ad-overlay.show { display: flex; }
+  #ad-overlay .ad-title { color: #c8a850; font-size: 14px; letter-spacing: 3px; margin-bottom: 24px; }
+  #ad-overlay .ad-count { color: #8a8a98; font-size: 48px; font-weight: 200; margin-bottom: 24px; }
+  #ad-overlay .ad-hint { color: #4a4a58; font-size: 12px; }
+  #ad-overlay .ad-box { width: 100%; max-width: 320px; height: 200px; background: #131318; border: 1px solid #2a2a32; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; color: #4a4a58; font-size: 12px; letter-spacing: 2px; }
+  /* Low sanity vignette */
+  #vignette { position:fixed; inset:0; pointer-events:none; z-index:300; opacity:0; transition:opacity 0.5s; background:radial-gradient(ellipse at center, transparent 40%, rgba(80,0,0,0.45) 100%); }
+  #vignette.active { opacity:1; }
+  .help-text { color:#8a8a98; font-size:13px; line-height:1.9; text-align:left; padding:0 8px; }
+  .help-text h3 { color:#c8c8d0; font-size:14px; margin:16px 0 6px; letter-spacing:2px; }
+  .help-text li { margin-bottom:4px; list-style:none; }
+  .help-text li::before { content:"· "; color:#c8a850; }
+  
+  .intent-detail { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 10px; border-radius:12px; }
+  .intent-detail .ic { font-size:14px; }
+  .intent-detail .pred { color:#9a9aa8; font-size:11px; margin-left:4px; }
+  .skill-tip {
+    position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
+    background: #1a1a22; border: 1px solid #3a3a44; border-radius: 8px;
+    padding: 12px 16px; z-index: 450; max-width: 90%; width: 320px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); pointer-events: none;
+  }
+  .skill-tip .tn { color:#d8d8e0; font-size:14px; margin-bottom:4px; }
+  .skill-tip .tc { color:#c8a850; font-size:11px; margin-bottom:6px; }
+  .skill-tip .td { color:#8a8a98; font-size:12px; line-height:1.6; }
+  .skill-tip .tf { color:#5a5a78; font-size:11px; font-style:italic; margin-top:6px; }
+  .settings-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #1a1a1e; color:#9a9aa8; font-size:13px; }
+  .settings-row button { width:auto; min-height:36px; padding:8px 14px; }
+  .kbd { display:inline-block; background:#1a1a20; border:1px solid #2a2a32; border-radius:3px; padding:0 5px; font-size:11px; color:#9a9aa8; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar" style="display:none;">
+    <div class="bar-row bar-main">
+      <span><span id="floor-label">6楼</span> · <span id="step-label">第1步</span></span>
+      <span><span id="lv-label">Lv.1</span> <span id="path-label" class="path-tag" style="display:none;"></span></span>
+    </div>
+    <div class="hpbar"><div class="hpfill player" id="hp-bar" style="width:100%"></div></div>
+    <div class="bar-row"><span>理智 <span id="hp-text">100/100</span></span><span>灵感 <span id="insp-label">0</span> · 纸钱 <span id="paper-label">0</span></span></div>
+    <div class="expbar"><div class="hpfill exp" id="exp-bar" style="width:0%"></div></div>
+    <div class="bar-row" style="margin-bottom:0;"><span style="font-size:10px;color:#4a4a58;">经验</span><span id="exp-text" style="font-size:10px;color:#6a6a78;">0/20</span></div>
+    <div class="hpbar" id="ghost-hp-wrap" style="display:none;margin-top:6px;"><div class="hpfill ghost" id="ghost-hp-bar" style="width:100%"></div></div>
+    <div class="bar-row" id="ghost-hp-row" style="display:none;"><span>鬼魂</span><span id="ghost-hp-text">0/0</span></div>
+    <div id="badges"></div>
+  </div>
+  <div id="content"><div id="boot-fallback" style="padding:56px 24px;text-align:center;color:#c8c8d0;">
+  <div style="font-size:11px;letter-spacing:4px;color:#666674;margin-bottom:10px;">A NIGHT IN DORM 607</div>
+  <div style="font-size:56px;letter-spacing:14px;font-weight:200;margin-bottom:12px;">607</div>
+  <div style="font-size:13px;color:#777784;margin-bottom:28px;">正在启动游戏…</div>
+  <div id="boot-help" style="font-size:12px;line-height:1.8;color:#555560;">如果这里一直不消失，请使用 Safari / Chrome 打开此 HTML。部分 iPhone 文件预览器不会运行网页游戏的 JavaScript。</div>
+</div></div>
+  <div id="actionbar"></div>
+  <div id="toast"></div>
+</div>
+<div id="crit-flash"></div>
+<div id="vignette"></div>
+<div id="ad-overlay">
+  <div class="ad-title">广 告</div>
+  <div class="ad-box">广告位</div>
+  <div class="ad-count" id="ad-count">3</div>
+  <div class="ad-hint">广告结束后继续</div>
+</div>
+
+<script>
+// 启动保护：即使脚本报错，也不要只显示黑屏
+window.__dorm607Started = false;
+window.addEventListener("error", function(e) {
+  var c = document.getElementById("content");
+  if (!c || window.__dorm607Started) return;
+  c.innerHTML = '<div style="padding:48px 22px;color:#c8c8d0;line-height:1.9;text-align:center;">' +
+    '<div style="font-size:28px;letter-spacing:8px;margin-bottom:20px;">607</div>' +
+    '<div style="color:#c88;margin-bottom:12px;">游戏启动失败</div>' +
+    '<div style="font-size:12px;color:#888;word-break:break-word;">' + (e.message || '当前浏览器没有执行游戏脚本') + '</div>' +
+    '<div style="font-size:12px;color:#666;margin-top:18px;">请使用 Safari / Chrome 打开，不要使用 iPhone 文件快速预览。</div></div>';
+});
+setTimeout(function(){
+  if (window.__dorm607Started) return;
+  var h = document.getElementById("boot-help");
+  if (h) h.style.color = "#a88";
+}, 1800);
+(() => {
+"use strict";
+
+/* ============ 音效系统（Web Audio 合成，无外部资源） ============ */
+let audioCtx = null, soundEnabled = true;
+try { soundEnabled = localStorage.getItem("dorm607_sound") !== "0"; } catch(e){}
+
+/* ============ 设置 ============ */
+let textSpeed = 1; // 0.5 慢 / 1 正常 / 2 快
+let skipStory = false;
+try {
+  textSpeed = parseFloat(localStorage.getItem("dorm607_textSpeed") || "1") || 1;
+  skipStory = localStorage.getItem("dorm607_skipStory") === "1";
+} catch(e){}
+function saveSettings() {
+  try {
+    localStorage.setItem("dorm607_textSpeed", String(textSpeed));
+    localStorage.setItem("dorm607_skipStory", skipStory ? "1" : "0");
+  } catch(e){}
+}
+function storyInterval(base) {
+  if (skipStory) return 0;
+  return Math.max(80, Math.floor((base || 800) / textSpeed));
+}
+
+function ensureAudio() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; }
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+function playTone(freq, dur, type, vol, slide) {
+  if (!soundEnabled) return;
+  const ctx = ensureAudio(); if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || "sine";
+  osc.frequency.setValueAtTime(freq, ctx.currentTime);
+  if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(1, slide), ctx.currentTime + dur);
+  gain.gain.setValueAtTime(vol || 0.08, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  osc.connect(gain); gain.connect(ctx.destination);
+  osc.start(); osc.stop(ctx.currentTime + dur + 0.02);
+}
+function sfx(name) {
+  if (!soundEnabled) return;
+  switch(name) {
+    case "click": playTone(420, 0.05, "triangle", 0.04); break;
+    case "dmg": playTone(180, 0.12, "sawtooth", 0.06, 80); break;
+    case "crit": playTone(520, 0.08, "square", 0.07); setTimeout(()=>playTone(780, 0.1, "square", 0.05), 60); break;
+    case "heal": playTone(440, 0.15, "sine", 0.05, 660); break;
+    case "block": playTone(280, 0.1, "triangle", 0.05); break;
+    case "win": playTone(330, 0.12, "sine", 0.05); setTimeout(()=>playTone(440, 0.15, "sine", 0.05), 100); setTimeout(()=>playTone(550, 0.2, "sine", 0.04), 220); break;
+    case "lose": playTone(200, 0.3, "sawtooth", 0.05, 60); break;
+    case "skill": playTone(360, 0.06, "triangle", 0.04); break;
+    case "lowhp": playTone(120, 0.25, "sine", 0.03); break;
+  }
+}
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  try { localStorage.setItem("dorm607_sound", soundEnabled ? "1" : "0"); } catch(e){}
+  toast(soundEnabled ? "音效已开启" : "音效已关闭");
+  if (soundEnabled) sfx("click");
+}
+
+/* ============ 存档 ============ */
+const META_KEY = "dorm607_meta", RUN_KEY = "dorm607_run";
+function defaultMeta() { return { runs:0, wins:0, bestFloor:6, totalKills:0, maxInspiration:0, maxPaper:0, fastestWin:0, achievements:[], totalPlayTime:0, heardLastWords:[], reviewUnlocked:false }; }
+function loadMeta() { try { const r = localStorage.getItem(META_KEY); return r ? { ...defaultMeta(), ...JSON.parse(r) } : defaultMeta(); } catch(e) { return defaultMeta(); } }
+function saveMeta(m) { try { localStorage.setItem(META_KEY, JSON.stringify(m)); } catch(e){} }
+let META = loadMeta();
+function saveRun() {
+  try {
+    const run = { floor:S.floor, step:S.step, hp:S.hp, maxHP:S.maxHP, inspiration:S.inspiration, paper:S.paper,
+      skills:S.skills.map(s=>s?{id:s.id,enhance:s.enhance||0}:null), equips:S.equips.map(e=>e.id),
+      talents:S.talents.map(t=>t.id),
+      refusedPaper:S.refusedPaper, shopGone:S.shopGone, startTime:S.startTime,
+      noSkillUsed:S.noSkillUsed, kills:S.kills, immortalTriggered:S.immortalTriggered,
+      level:S.level, exp:S.exp, expToNext:S.expToNext, bossPity:S.bossPity,
+      bossSpecials:S.bossSpecials.slice(), pendingLevelUps:S.pendingLevelUps, path:S.path, pathPassives:(S.pathPassives||[]).slice(), firstBattleDone:!!S.firstBattleDone, garbleHintShown:!!S.garbleHintShown };
+    localStorage.setItem(RUN_KEY, JSON.stringify(run));
+  } catch(e){}
+}
+function loadRun() { try { const r = localStorage.getItem(RUN_KEY); return r ? JSON.parse(r) : null; } catch(e){ return null; } }
+function clearRun() { try { localStorage.removeItem(RUN_KEY); } catch(e){} }
+
+const ACHIEVEMENTS = [
+  { id:"first_death", name:"第一次死亡", desc:"死一次" },
+  { id:"first_win",   name:"第一次逃出", desc:"通关一次" },
+  { id:"no_skills",   name:"不带技能",   desc:"不用任何技能通关" },
+  { id:"max_insp",    name:"灵感满溢",   desc:"灵感达到 7" },
+  { id:"rich",        name:"富甲一方",   desc:"纸钱达到 200" },
+  { id:"speedrun",    name:"速通",       desc:"10 分钟内通关" },
+  { id:"one_hp",      name:"极限生还",   desc:"以 1 点理智通关" },
+  { id:"killer",      name:"杀鬼如麻",   desc:"单局击杀 30 只鬼" },
+  { id:"equip_master",name:"装备大师",   desc:"通关时拥有 2 件传说装备" },
+  { id:"skill_master",name:"技能大师",   desc:"通关时拥有 5 个传说技能" },
+  { id:"immortal_win",name:"不死之身",   desc:"触发不朽后通关" },
+  { id:"all_knowing", name:"全知全能",   desc:"灵感 7 时击杀 BOSS" },
+];
+function unlockAchievement(id) {
+  if (META.achievements.includes(id)) return;
+  META.achievements.push(id); saveMeta(META);
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (a) toast("成就解锁：" + a.name);
+}
+
+/* ============ 状态 ============ */
+const S = {
+  floor: 6, step: 0, maxStep: 3,
+  hp: 100, maxHP: 100,
+  inspiration: 0, paper: 0,
+  hasPaper: false, refusedPaper: false, paperDropShown: false,
+  shopGone: false,
+  skills: [null,null,null,null,null],
+  equips: [], talents: [], battle: null, mapOptions: [], eventLog: "",
+  immortalUsed: false,
+  adReviveFloor: -1, adRerollFloor: -1, adShopFloor: -1, adTalentUsed: false,
+  startTime: 0, kills: 0,
+  noSkillUsed: true, immortalTriggered: false,
+  phase: "title",
+  // 经验 / 等级 / BOSS专长 / 道路
+  level: 1, exp: 0, expToNext: 20,
+  bossPity: 0,
+  bossSpecials: [],
+  pendingLevelUps: 0,
+  path: null,
+  pathPassives: [],
+  pathKillInspUsed: false,
+  sideDoorUsed: false,
+  mapKey: null,
+  firstBattleDone: false,
+  garbleHintShown: false,
+};
+const FLOOR_ORDER = [6,5,4,3,2,1];
+const MAX_EQUIPS = 3;
+const MAX_TALENTS = 4;
+
+/* ============ 乱码 ============ */
+const GARBLE_CHARS = ["□","▓","█","░","▒","■","▣","▤","▥"];
+const PRESERVE_CHARS = ["你","我","他","她","门","镜","鬼","走","看","听","死","血","手","脚","声","影","黑","白","冷","热","笑","哭","回","头","口","眼","嘴","脸","夜","楼","梯","窗","灯","理","智","疯","怕"];
+function maybeShowGarbleHint() {
+  if (S.garbleHintShown) return;
+  if (S.hp > 50) return;
+  S.garbleHintShown = true;
+  setTimeout(() => {
+    toast("有些字……你看不清了");
+    if (S.battle) {
+      addLog("字开始糊了。不是眼睛的问题。是你自己在变。", "flavor");
+    } else if (S.phase === "map" || S.phase === "event" || S.phase === "safeRoom") {
+      // 非战斗：弹出一次短提示
+      const prev = content.innerHTML;
+      const prevBar = actionbar.innerHTML;
+      const phase = S.phase;
+      content.innerHTML = `<div style="padding:40px 24px;text-align:center;"><div class="story-text warn show" style="line-height:2.2;white-space:pre-wrap;">${garbleText("有些字你忽然读不懂。\n\n不是眼镜。不是灯。\n\n是你的脑子开始……靠近这栋楼了。\n\n理智越低，世界越不像话。\n你得快点出去。")}</div></div>`;
+      actionbar.innerHTML = "";
+      const btn = document.createElement("button");
+      btn.className = "btn primary";
+      btn.textContent = "……我知道了";
+      btn.onclick = () => {
+        // 无法完美恢复，用户继续操作即可；尽量回到地图
+        if (phase === "map") renderMap();
+        else if (phase === "safeRoom") { /* leave as is */ }
+        else renderMap();
+      };
+      actionbar.appendChild(btn);
+    }
+  }, 350);
+}
+function garbleText(str) {
+  if (!str) return str;
+  const s = S.hp;
+  let ratio = 0;
+  if (s <= 10) ratio = 0.28;
+  else if (s <= 20) ratio = 0.18;
+  else if (s <= 30) ratio = 0.10;
+  else if (s <= 50) ratio = 0.05;
+  else return str;
+  maybeShowGarbleHint();
+  let out = "";
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    if (/[\s\n，。！？、；：""''《》（）—…·]/.test(ch)) { out += ch; continue; }
+    if (PRESERVE_CHARS.includes(ch)) { out += ch; continue; }
+    if (Math.random() < ratio) out += GARBLE_CHARS[Math.floor(Math.random()*GARBLE_CHARS.length)];
+    else out += ch;
+  }
+  return out;
+}
+
+/** 逐段剧情：自动推进；点击任意处可立刻下一段 */
+function playStoryLines(lines, onDone, opts) {
+  opts = opts || {};
+  const baseInterval = opts.interval || 800;
+  const btnLabel = opts.btnLabel || null;
+  // 跳过全部旁白
+  if (skipStory && !opts.forceShow) {
+    if (btnLabel) {
+      content.innerHTML = "";
+      const wrap = document.createElement("div");
+      wrap.style.cssText = "padding:60px 24px;display:flex;flex-direction:column;justify-content:center;min-height:60vh;";
+      content.appendChild(wrap);
+      const btn = document.createElement("button");
+      btn.className = "btn primary"; btn.textContent = btnLabel;
+      btn.onclick = () => onDone && onDone();
+      wrap.appendChild(btn);
+    } else {
+      onDone && onDone();
+    }
+    return;
+  }
+  const interval = storyInterval(baseInterval);
+  content.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.style.cssText = "padding:60px 24px 40px;display:flex;flex-direction:column;justify-content:center;min-height:100%;cursor:pointer;";
+  content.appendChild(wrap);
+  const hint = document.createElement("div");
+  hint.style.cssText = "text-align:center;color:#3a3a44;font-size:11px;margin-bottom:16px;letter-spacing:2px;";
+  hint.textContent = "点击继续 · 可跳过";
+  wrap.appendChild(hint);
+  let i = 0;
+  let timer = null;
+  let finished = false;
+  const clearT = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    clearT();
+    wrap.style.cursor = "default";
+    wrap.onclick = null;
+    hint.remove();
+    if (btnLabel) {
+      const btn = document.createElement("button");
+      btn.className = "btn primary"; btn.style.marginTop = "32px"; btn.textContent = btnLabel;
+      btn.onclick = (e) => { e.stopPropagation(); onDone && onDone(); };
+      wrap.appendChild(btn);
+    } else {
+      onDone && onDone();
+    }
+  };
+  const showNext = () => {
+    if (finished) return;
+    if (i >= lines.length) { finish(); return; }
+    clearT();
+    const item = lines[i++];
+    const text = typeof item === "string" ? item : item.text;
+    const cls = typeof item === "string" ? (opts.cls || sanityClass()) : (item.cls || sanityClass());
+    const p = document.createElement("div");
+    p.className = cls;
+    p.textContent = garbleText(text);
+    wrap.appendChild(p);
+    requestAnimationFrame(() => p.classList.add("show"));
+    content.scrollTop = content.scrollHeight;
+    if (i >= lines.length) {
+      timer = setTimeout(finish, Math.min(interval || 200, 400));
+    } else {
+      timer = setTimeout(showNext, interval || 50);
+    }
+  };
+  wrap.onclick = () => {
+    if (finished) return;
+    if (i >= lines.length) { finish(); return; }
+    showNext();
+  };
+  showNext();
+}
+
+function sanityClass() {
+  if (S.hp <= 20) return "story-text flash";
+  if (S.hp <= 30) return "story-text repeat";
+  if (S.hp <= 50) return "story-text dim";
+  return "story-text";
+}
+
+/* ============ 楼层叙事 ============ */
+const FLOOR_INTRO = {
+  6: "6楼。你住的地方。\n走廊很长。灯全灭了。\n你摸着墙往前走。",
+  5: "你走下楼梯。\n楼梯很窄。扶手是凉的。\n你数了台阶。二十四级。\n你数了两遍。第二遍是二十五级。",
+  4: "4楼。这里以前是浴室。\n你不记得自己来过。\n但你知道这里是浴室。\n你闻到了铁锈味。",
+  3: "3楼。食堂。\n打饭窗口的灯还亮着。\n没有人在。\n但碗是热的。",
+  2: "2楼。很黑。\n你什么都看不见。\n你听见身后有脚步声。\n你没有回头。",
+  1: "1楼。大厅。\n尽头有一扇门。\n门外有光。\n你走了过去。",
+};
+const FLOOR_NAMES = {6:"宿舍区",5:"自习室",4:"浴室",3:"食堂",2:"走廊",1:"大厅"};
+
+const FLOOR_TRANSITION = {
+  5: [
+    "你离开6楼的时候，走廊灯闪了一下。",
+    "楼梯口。\n扶手是凉的。掌心贴上去，粘了一层灰。",
+    "你往下走。每一步都在响。\n你数台阶。二十四。",
+    "数到一半，你忘了数到哪。\n重新数。二十五。",
+    "风从下方来。带着粉笔灰和旧纸味。",
+    "你没有回头。\n5楼的门在你面前。\n门缝里，像有人在翻书。",
+  ],
+  4: [
+    "自习室的灯在你身后一盏盏灭。",
+    "再下一层。空气变湿了。\n像有人刚洗完澡，却忘了关窗。",
+    "铁锈味从下方飘上来。越来越浓。",
+    "你踩到一滩水。水是温的。\n像刚流出来的。",
+    "墙上的安全须知糊成一团。\n只剩「禁止」两个字还清楚。",
+    "4楼。门缝里渗出水光。\n你听见滴答。不是表。",
+  ],
+  3: [
+    "你把浴室的潮湿留在了身后。\n鞋底还是湿的。",
+    "楼梯转角贴着旧菜单。字迹糊了。",
+    "你闻到油烟。和饭菜。和别的什么。",
+    "肚子响了一下。\n你说不清是饿，还是怕。",
+    "打饭窗口的灯还亮着。只有一盏。\n光里有油烟在转。",
+    "3楼。你推开门。\n碗筷声很轻。像有人刚放下。",
+  ],
+  2: [
+    "食堂的灯在你身后灭了。\n灭得很整齐。",
+    "灯越来越少。你摸着墙往下。\n墙皮一片片掉。",
+    "身后有脚步。和你同一步频。\n你停，它停。",
+    "你没有回头。你加快了。\n脚步声也加快了。",
+    "应急灯只剩一格绿。\n绿光里，影子比你高。",
+    "2楼。黑得像把眼睛闭上。\n你还是睁着。",
+  ],
+  1: [
+    "黑暗在你身后合拢。\n像门。",
+    "最后一段楼梯。下面有光。\n白的。不像应急灯。",
+    "你的手在抖。不是冷。",
+    "你想起607的门。\n想起三下敲门。\n想起门自己开了。",
+    "栏杆上有抓痕。新的。\n朝下。",
+    "1楼大厅。尽头有一扇门。\n门缝里的光，一直没灭。\n你走了过去。",
+  ],
+};
+function showFloorTransition(toFloor, callback) {
+  S.phase = "floorTransition";
+  topbar.style.display = "none";
+  actionbar.innerHTML = "";
+  const lines = FLOOR_TRANSITION[toFloor] || ["你走下楼梯。", "你到了下一层。"];
+  playStoryLines(lines, callback, { interval: 850, btnLabel: "踏入 " + toFloor + " 楼" });
+}
+
+
+const BOSS_INTRO = {
+  6: "你走到走廊尽头。\n前面没有路了。\n只有一扇门。门上没有门牌。\n\n门前站着一个人。\n它没有脸。\n它的手指还停在门上。\n\n它敲了敲门。\n一下。两下。三下。\n和你在607听见的，一模一样。\n\n它转过身。\n空荡荡的脸对着你。\n像在等你应门。",
+  5: "你走进自习室深处。\n所有的灯都灭了。\n只有最后一排还亮着一盏。\n光圈里坐着一个人。\n\n它背对着你。\n肩膀在抖。像在笑。\n\n它转过头。\n它没有脸。\n但镜子里——如果这里有镜子——\n你会看见自己的笑。\n\n它拍了拍旁边的空位。",
+  4: "你走进浴室最里面。\n水龙头全开着。\n红色的水漫过脚面，又漫过脚踝。\n\n水中央站着一个人。\n它很瘦。肋骨一根根数得清。\n它的眼睛是两个洞。\n\n它朝你伸出手。\n掌心向上。\n像在邀你下水。\n\n水还在涨。",
+  3: "你走进食堂。\n打饭窗口的灯还亮着。\n窗口后面有东西在动。\n\n它在吃。\n吃得很慢。很认真。\n碗沿刮过什么，发出细响。\n\n它转过来了。\n它没有脸。\n但它有牙。很多牙。\n\n它把空碗推向你。\n像在说：该你了。",
+  2: "2楼很黑。\n你伸手看不见五指。\n\n但你听见呼吸。\n就在右耳旁边。\n很近。近到能感觉到冷。\n\n你没有回头。\n你知道它在笑。\n你知道它一直在等。\n\n等你把最后一点光，也交出去。",
+  1: "1楼大厅。\n尽头有一扇门。\n门缝里漏出白光。\n\n门前站着一个人。\n它没有脸。\n它比你在任何一层见过的，都更安静。\n\n它开口了。声音很轻。像从门后传来。\n\n“你也要出去吗？”\n\n停了一下。\n“出去的人，都不回头。”\n“你呢？”",
+};
+
+const GENERIC_DEATH = [
+  "它的轮廓散开。\n像烟。",
+  "它张了张嘴。\n没有声音。",
+  "它往后退。\n退进了墙里。",
+  "“……还没……”\n声音断了。",
+  "它看着你。\n然后什么都没有了。",
+  "空气松了一下。\n你还活着。",
+];
+const BOSS_LAST_WORDS = {
+  6: "它跪了下去。\n没有脸的头，朝向你。\n\n“……第四下……”\n“……该你……应了……”\n\n声音断了。\n像门轴终于停住。",
+  5: "镜面裂开。\n碎片里无数张嘴同时动。\n\n“……你……也是……我……”\n\n笑停了。\n只剩一地反光。",
+  4: "水退下去。\n它的手还伸着。\n\n“……下来……”\n“……水是……暖的……”\n\n手指并拢。\n沉进地缝里。",
+  3: "碗掉在地上。\n它的牙还在磕。\n\n“……还……饿……”\n“……你……不吃……吗……”\n\n咀嚼声停了。",
+  2: "黑暗裂开一道缝。\n你看见它的轮廓，最后一次。\n\n“……别……开灯……”\n“……光……会……找到你……”\n\n呼吸没了。",
+  1: "它靠在门框上。\n像累了。\n\n“……出去的人……”\n“……都不回头……”\n\n停了很久。\n“……你……会回头吗……”\n\n它没有等你回答。",
+};
+const BOSS_WIN = {
+  6: "它消失了。\n走廊安静了。\n你回头看。\n那扇门也不见了。\n你往前走。\n楼梯在前面。\n你走下楼梯。",
+  5: "它消失了。\n自习室的灯全亮了。\n最后一排空了。\n你走过去。\n桌上有一本笔记本。\n你没有翻开。\n你走下楼梯。",
+  4: "它消失了。\n水龙头全关了。\n地上的水退了。\n浴室恢复了原来的样子。\n你走出去。\n你走下楼梯。",
+  3: "它消失了。\n打饭窗口的灯灭了。\n食堂空了。\n你走出去。\n你走下楼梯。",
+  2: "它消失了。\n灯亮了。\n你看见走廊的全貌。\n很短。\n你走出去了。\n你走下楼梯。",
+  1: "它没有拦你。\n它往旁边让了一步。\n\n门开了。\n外面是白的。刺眼。\n\n你走出去。\n风是真的。声音是真的。\n\n你回头看。\n楼里什么都没有了。\n连门缝里的光，也灭了。\n\n你走了。\n没有回头第二次。",
+};
+const BOSS_LOSE = {
+  6: "它敲了三下。\n你应了。\n门开了。\n你被拉进去了。\n门关上了。\n走廊里只剩下你的手机。\n屏幕亮着。\n上面什么都没有。",
+  5: "它笑了。\n镜子碎了。\n碎片里全是眼睛。\n你也变成了碎片。\n自习室里再也没有人。",
+  4: "水漫上来了。\n你来不及跑。\n水是红的。\n你沉下去了。\n浴室恢复了安静。",
+  3: "它咬住了你。\n它很饿。\n它吃了很久。\n食堂的灯灭了。\n碗还在冒热气。",
+  2: "它抓住了你。\n你看不见它。\n但你感觉到它在拉你。\n你被拉进黑暗里。\n2楼安静了。",
+  1: "它推开了门。\n但它没有让你走。\n它看着你。\n“你留下来吧。”\n你留下来了。\n门关上了。",
+};
+const SAFE_ROOM_INTRO = {
+  6: "你推开一扇门。\n里面有一盏灯。\n有一张床。\n有一杯热水。\n你坐下来。\n你不知道这是谁留的。\n但你知道，有人不想让你死。",
+  5: "你走进一个角落。\n有一张椅子。\n椅子是温的。\n像是有人刚坐过。\n你坐下来。\n你听见自己的心跳。\n慢下来了。",
+  4: "你走进一个小隔间。\n毛巾挂在墙上。\n是干净的。\n还有一杯水。\n水是温的。",
+  3: "你走进食堂角落。\n桌上有一碗热饭。\n没有人。\n但饭是热的。\n你坐下来。\n你吃了。",
+  2: "你走到走廊尽头。\n有一扇门。\n门开着。\n里面有一张床。\n你躺下来。\n你听见远处有人说了句什么。\n你没有听清。",
+};
+
+/* ============ 技能（32个） ============ */
+const SKILLS = [
+  { id:"punch", path:"powang",   name:"拳击",   rarity:"common", cost:1, cd:0, req:0, desc:"4精神冲击,施破绽",  flavor:"指节发白。你打了出去。", effect:()=>{ dealDamage(4); applyDebuff("破绽",1); } },
+  { id:"kick", path:"powang",    name:"踢击",   rarity:"common", cost:1, cd:0, req:0, desc:"3精神冲击,施虚弱",  flavor:"鞋底擦过地面。它晃了一下。", effect:()=>{ dealDamage(3); applyDebuff("虚弱",1); } },
+  { id:"touch", path:"powang",   name:"轻触",   rarity:"common", cost:1, cd:0, req:0, desc:"2精神冲击,无视定力", flavor:"指尖碰到冷。它缩了。", effect:()=>{ dealDamage(2, true); } },
+  { id:"stare", path:"tongling",   name:"凝视",   rarity:"common", cost:1, cd:0, req:0, desc:"下回合首次攻击+50%", flavor:"你不眨眼。它也不。", effect:()=>{ S.battle._stareBuff = true; addLog("你盯住了它。下回合首次攻击+50%。","special"); } },
+  { id:"block", path:"zhenhun",   name:"定神",   rarity:"common", cost:1, cd:1, req:0, desc:"6定力",            flavor:"呼吸放慢。墙还在。你也在。", effect:()=>{ gainBlock(6); } },
+  { id:"dodge", path:"zhenhun",   name:"闪避",   rarity:"common", cost:1, cd:0, req:0, desc:"5定力",           flavor:"脚步很轻。像你从没在过这里。", effect:()=>{ gainBlock(5); } },
+  { id:"focus", path:"tongling",   name:"专注",   rarity:"common", cost:1, cd:2, req:0, desc:"下回合专注+1",     flavor:"你数自己的心跳。一。二。", effect:()=>{ S.battle.bonusEnergy = (S.battle.bonusEnergy || 0) + 1; addLog("你专注了。下回合专注+1。","special"); } },
+  { id:"insight", path:"tongling", name:"洞察",   rarity:"common", cost:1, cd:1, req:0, desc:"6精神冲击,无视定力", flavor:"你看见了它的弱点。", effect:()=>{ dealDamage(6, true); } },
+  { id:"guard", path:"zhenhun",   name:"护体",   rarity:"common", cost:1, cd:1, req:0, desc:"8定力",            flavor:"你抱住了自己。", effect:()=>{ gainBlock(8); } },
+  { id:"heavy", path:"powang",   name:"重击",   rarity:"rare",   cost:2, cd:1, req:0, desc:"10精神冲击,耗破绽翻倍", flavor:"你把全身力气压进这一下。", effect:()=>{ const bonus = consumeDebuff("破绽"); dealDamage(10 + bonus*6); } },
+  { id:"iron", path:"zhenhun",    name:"铁壁",   rarity:"rare",   cost:2, cd:2, req:0, desc:"12定力",          flavor:"你站住了。", effect:()=>{ gainBlock(12); } },
+  { id:"stun", path:"powang",    name:"眩晕",   rarity:"rare",   cost:2, cd:3, req:0, desc:"鬼跳过下回合",     flavor:"它的动作顿了一拍。像片子卡帧。", effect:()=>{ stunGhost(); } },
+  { id:"drain", path:"tongling",   name:"汲取",   rarity:"rare",   cost:2, cd:2, req:0, desc:"6精神冲击,回6理智", flavor:"你从恐惧中汲取冷静。", effect:()=>{ dealDamage(6); heal(6); } },
+  { id:"burn", path:"powang",    name:"灼烧",   rarity:"rare",   cost:1, cd:1, req:0, desc:"5精神冲击,施灼烧", flavor:"它身上着火了。", effect:()=>{ dealDamage(5, true); applyDebuff("灼烧",2); clearWet(2); } },
+  { id:"combo", path:"powang",   name:"连击",   rarity:"rare",   cost:1, cd:1, req:0, desc:"3精神冲击×3",     flavor:"一拳。两拳。三拳。", effect:()=>{ dealDamage(3); dealDamage(3); dealDamage(3); } },
+  { id:"pierce", path:"powang",  name:"穿刺",   rarity:"rare",   cost:1, cd:1, req:3, desc:"6精神冲击,无视定力", flavor:"你穿透了它。", effect:()=>{ dealDamage(6, true); } },
+  { id:"bloodrite", path:"powang",name:"血祭",  rarity:"rare",   cost:2, cd:1, req:3, desc:"失去5理智,造成15精神冲击", flavor:"你用自己的理智换取力量。", effect:()=>{ S.hp -= 5; dealDamage(15); updateTopbar(); } },
+  { id:"counter", path:"zhenhun", name:"反击",   rarity:"rare",   cost:2, cd:2, req:3, desc:"8定力,反弹定力一半", flavor:"你准备好了。", effect:()=>{ gainBlock(8); const reflect = Math.floor(S.battle.playerBlock / 2); if (reflect > 0) dealDamage(reflect); } },
+  { id:"whisper", path:"tongling", name:"回响",   rarity:"rare",   cost:1, cd:2, req:4, desc:"造成上次伤害的一半", flavor:"它记得你刚才做了什么。", effect:()=>{ const half = Math.floor((S.battle.lastDamage || 0) / 2); if (half > 0) dealDamage(half); else addLog("没有可回响的伤害。","sys"); } },
+  { id:"purify", path:"zhenhun",  name:"净化",   rarity:"rare",   cost:2, cd:3, req:4, desc:"清除所有负面状态,回5理智", flavor:"你把自己洗了一遍。", effect:()=>{ S.battle.wet = 0; S.battle.dark = 0; S.battle.locked = false; S.battle.ghostDebuffs.虚弱 = 0; heal(5); addLog("你清除了一切。","special"); } },
+  { id:"slam", path:"powang",    name:"猛击",   rarity:"legend", cost:3, cd:3, req:4, desc:"22精神冲击,耗破绽翻倍", flavor:"你把它砸在地上。地板震了一下。它没有叫。", effect:()=>{ const bonus = consumeDebuff("破绽"); dealDamage(22 + bonus*10); } },
+  { id:"death", path:"tongling",   name:"死神之触",rarity:"legend", cost:3, cd:3, req:4, desc:"12精神冲击,回12理智", flavor:"你碰到了它。指尖一片冰。它往后退。", effect:()=>{ dealDamage(12); heal(12); } },
+  { id:"chain", path:"powang",   name:"连环击", rarity:"legend", cost:2, cd:2, req:4, desc:"5精神冲击×4",     flavor:"一拳。两拳。三拳。四拳。", effect:()=>{ dealDamage(5); dealDamage(5); dealDamage(5); dealDamage(5); } },
+  { id:"timestop", path:"tongling",name:"时间停止",rarity:"legend", cost:3, cd:4, req:5, desc:"鬼跳过2回合",     flavor:"它停住了。连呼吸都停了。你听见自己的心跳。", effect:()=>{ S.battle.ghostStunned = 2; addLog("时间停止了。","special"); } },
+  { id:"aegis", path:"zhenhun",   name:"绝对防御",rarity:"legend", cost:2, cd:3, req:5, desc:"15定力,免疫下回合", flavor:"什么都不可能进来。连恐惧也暂时被挡在外面。", effect:()=>{ gainBlock(15); S.battle.immuneNext = true; addLog("你被绝对防御包裹。","special"); } },
+  { id:"reset", path:"tongling",   name:"重置",   rarity:"legend", cost:2, cd:4, req:5, desc:"清除所有技能冷却", flavor:"你重新开始。", effect:()=>{ const selfIdx = S.skills.findIndex(s => s && s.id === "reset"); const selfCd = selfIdx >= 0 ? S.battle.cooldowns[selfIdx] : 0; S.battle.cooldowns = S.battle.cooldowns.map(()=>0); if (selfIdx >= 0) S.battle.cooldowns[selfIdx] = selfCd; addLog("所有冷却清除了。","special"); } },
+  { id:"shield", path:"zhenhun",  name:"护盾",   rarity:"legend", cost:2, cd:2, req:5, desc:"获得等于已损失理智一半的定力", flavor:"你的伤口变成了墙。", effect:()=>{ const loss = Math.floor((S.maxHP - S.hp) / 2); gainBlock(loss); } },
+  { id:"ruin", path:"powang",    name:"毁灭",   rarity:"legend", cost:3, cd:3, req:6, desc:"30精神冲击,失去10理智", flavor:"你不再保留。有什么东西从你身体里抽走了。", effect:()=>{ S.hp -= 10; dealDamage(30); updateTopbar(); } },
+  { id:"echo", path:"tongling",    name:"回响",   rarity:"legend", cost:2, cd:2, req:6, desc:"再次触发上一个技能", flavor:"你又做了一次。", effect:()=>{ if (S.battle.lastSkillId) { const s = skillById(S.battle.lastSkillId); if (s && s.id !== "echo") { addLog(`回响：「${s.name}」`,"special"); s.effect(); } } } },
+  { id:"absorb", path:"zhenhun",  name:"吸收",   rarity:"legend", cost:2, cd:3, req:6, desc:"造成8精神冲击,获得等量定力", flavor:"你把它变成了自己的一部分。", effect:()=>{ const before = S.battle.ghostHP; dealDamage(8); const dealt = before - S.battle.ghostHP; if (dealt > 0) gainBlock(dealt); } },
+  { id:"void", path:"tongling",    name:"虚空",   rarity:"legend", cost:3, cd:4, req:7, desc:"造成20精神冲击,鬼魂下回合伤害减半", flavor:"你把它拉进了虚空。它的轮廓碎了一瞬。", effect:()=>{ dealDamage(20); S.battle.ghostWeak = true; addLog("鬼魂被削弱了。","special"); } },
+  { id:"sacrifice", path:"powang",name:"献祭",  rarity:"legend", cost:3, cd:4, req:7, desc:"失去20%最大理智,造成30精神冲击", flavor:"你把自己的一部分给了它。", effect:()=>{ const loss = Math.floor(S.maxHP * 0.2); S.hp -= loss; dealDamage(30); updateTopbar(); } },,
+
+  { id:"brace", path:"zhenhun", name:"撑住", rarity:"common", cost:1, cd:0, req:0, desc:"获得 3+已损失专注 的定力", flavor:"你咬紧牙。先活过这一下。", effect:()=>{ const b=S.battle; const miss=Math.max(0,(b.maxEnergy||2)-b.energy); gainBlock(3+miss); } },
+  { id:"shove", path:"powang", name:"撞开", rarity:"common", cost:1, cd:0, req:0, desc:"5精神冲击，自身+2定力", flavor:"肩膀撞上去。它退了半步。", effect:()=>{ dealDamage(5); gainBlock(2); } },
+  { id:"listen", path:"tongling", name:"聆听", rarity:"common", cost:1, cd:2, req:0, desc:"本回合可见意图，并造成3冲击", flavor:"你把耳朵贴向黑暗。", effect:()=>{ S.battle._forceIntent=true; dealDamage(3); addLog("你听见了它的下一步。","special"); } },
+  { id:"grit", path:"zhenhun", name:"咬牙", rarity:"rare", cost:1, cd:2, req:0, desc:"8定力，若理智低于50%再+4", flavor:"你告诉自己：再撑一轮。", effect:()=>{ gainBlock(8+(S.hp<S.maxHP*0.5?4:0)); } },
+  { id:"rupture", path:"powang", name:"撕裂", rarity:"rare", cost:2, cd:2, req:2, desc:"7精神冲击，破绽越多伤害越高", flavor:"你专往裂口上打。", effect:()=>{ const stacks=(S.battle.ghostDebuffs&&S.battle.ghostDebuffs["破绽"])||0; dealDamage(7+stacks*3); } },
+  { id:"nameit", path:"tongling", name:"点名", rarity:"rare", cost:1, cd:2, req:2, desc:"6冲击无视定力，灵感+1（每场限1）", flavor:"你叫出了它的名字。它缩了一下。", effect:()=>{ dealDamage(6,true); if(!S.battle._named){ S.battle._named=true; gainInspiration(1); addLog("点名：灵感+1。","special"); } } },
+  { id:"fortress", path:"zhenhun", name:"心城", rarity:"legend", cost:2, cd:3, req:4, desc:"10定力，本回合再受击时反弹一半", flavor:"你在心里砌了一道墙。", effect:()=>{ gainBlock(10); S.battle._reflectHalf=true; addLog("心城：再受伤将反弹一半。","special"); } },
+  { id:"frenzy", path:"powang", name:"狂乱", rarity:"legend", cost:2, cd:3, req:4, desc:"4冲击×4，每次附加1破绽", flavor:"你不再数次数。", effect:()=>{ for(let i=0;i<4;i++){ dealDamage(4); applyDebuff("破绽",1);} } },
+  { id:"seer", path:"tongling", name:"洞开", rarity:"legend", cost:2, cd:3, req:5, desc:"揭示全部信息，并造成12冲击", flavor:"楼对你打开了一条缝。", effect:()=>{ S.battle._fullReveal=true; dealDamage(12); addLog("你看见了它的全部。","special"); } },
+];
+function skillById(id) { return SKILLS.find(s=>s.id===id); }
+function cloneSkill(s, enhance) {
+  if (!s) return null;
+  const c = { ...s, enhance: enhance != null ? enhance : (s.enhance || 0) };
+  return c;
+}
+function ownedSkillIds() {
+  return S.skills.filter(Boolean).map(s => s.id);
+}
+function findOwnedSkill(id) {
+  return S.skills.find(s => s && s.id === id);
+}
+function canEnhanceSkill(s) {
+  return s && s.rarity === "common" && (s.enhance || 0) < 5;
+}
+function isMaxEnhanced(s) {
+  return s && s.rarity === "common" && (s.enhance || 0) >= 5;
+}
+function enhanceSkillInPlace(id) {
+  for (let i = 0; i < S.skills.length; i++) {
+    if (S.skills[i] && S.skills[i].id === id && canEnhanceSkill(S.skills[i])) {
+      S.skills[i] = cloneSkill(S.skills[i], (S.skills[i].enhance || 0) + 1);
+      return S.skills[i];
+    }
+  }
+  return null;
+}
+function getAvailableSkills() {
+  const owned = new Set(ownedSkillIds());
+  return SKILLS.filter(s => {
+    if ((s.req || 0) > S.inspiration) return false;
+    if (owned.has(s.id)) {
+      // 已拥有：满级普通不再出现；未满级普通不作为「新技能」出现
+      return false;
+    }
+    return true;
+  });
+}
+
+/* ============ 道路（倾向） ============ */
+const PATHS = {
+  zhenhun: {
+    id: "zhenhun", name: "镇魂",
+    color: "#6a8aa8",
+    desc: "稳住自己。挡住冲击，活得更久。",
+    flavor: "你爸说过，怕的时候也要站直。",
+    skillBias: "zhenhun",
+    // 升级被动节点（到达对应等级时获得）
+    passives: {
+      3: { name: "沉心", desc: "每回合开始额外 +2 定力" },
+      6: { name: "铁骨", desc: "最大理智 +15，立即回复 15" },
+      9: { name: "不移", desc: "受到的精神冲击永久 -1" },
+    }
+  },
+  powang: {
+    id: "powang", name: "破妄",
+    color: "#c8a0a0",
+    desc: "主动出手。用冲击撕开它们。",
+    flavor: "有些东西，不打穿就出不去。",
+    skillBias: "powang",
+    passives: {
+      3: { name: "锐意", desc: "所有精神冲击 +1" },
+      6: { name: "凶念", desc: "暴击率 +10%" },
+      9: { name: "碎裂", desc: "暴击时额外造成 4 点冲击" },
+    }
+  },
+  tongling: {
+    id: "tongling", name: "通灵",
+    color: "#9a6ac8",
+    desc: "听、看、懂。用灵感换活路。",
+    flavor: "楼在跟你说话。你决定听。",
+    skillBias: "tongling",
+    passives: {
+      3: { name: "耳鸣", desc: "战斗开始灵感 +1" },
+      6: { name: "洞见", desc: "始终能看见鬼魂意图" },
+      9: { name: "全知", desc: "击杀时额外 +1 灵感（每场限 1 次）" },
+    }
+  },
+};
+function pathName(id) { return PATHS[id] ? PATHS[id].name : ""; }
+
+
+/* ============ 经验值 ============ */
+function expNeeded(lv) { return 12 + lv * 8; } // Lv1→2:20, 2→3:28, 3→4:36...
+function getKillExp(kind, floor, ghost) {
+  // 基础经验随楼层略升（越往下越难，经验略多）
+  const depth = 7 - floor; // 6楼=1, 1楼=6
+  if (kind === "normal") {
+    // 不同普通怪略有差异：按 hp 微调
+    const base = 8 + depth * 2;
+    const bonus = ghost && ghost.hp ? Math.floor(ghost.hp / 20) : 0;
+    return base + bonus;
+  }
+  if (kind === "elite") return 18 + depth * 3;
+  if (kind === "hidden") return 32 + depth * 4;
+  if (kind === "boss") return 45 + depth * 5;
+  if (kind === "shopkeeper") return 50;
+  return 10;
+}
+function gainExp(amount) {
+  if (amount <= 0) return;
+  S.exp += amount;
+  let leveled = 0;
+  while (S.exp >= S.expToNext) {
+    S.exp -= S.expToNext;
+    S.level++;
+    S.expToNext = expNeeded(S.level);
+    leveled++;
+    S.pendingLevelUps++;
+  }
+  updateTopbar();
+  if (leveled > 0) {
+    toast(`等级提升！Lv.${S.level - leveled} → Lv.${S.level}`);
+    sfx("win");
+  } else {
+    toast(`+${amount} 经验`);
+  }
+}
+
+/* ============ BOSS 专长（低概率掉落，4次保底） ============ */
+const BOSS_SPECIALS = {
+  6: { id:"bs_fourth", name:"第四下", desc:"战斗中每第4次使用技能，额外造成8点精神冲击", flavor:"你学会了它敲门的节奏。" },
+  5: { id:"bs_mirror", name:"镜裂", desc:"对拥有定力的鬼魂，精神冲击+4", flavor:"你看见了镜面背后的裂缝。" },
+  4: { id:"bs_dry",   name:"抽干", desc:"造成精神冲击时，额外清除1层潮湿", flavor:"你从水里把什么抽了出来。" },
+  3: { id:"bs_starve",name:"反噬", desc:"鬼魂偷取最大理智时，你回复等量理智", flavor:"它越饿，你越清醒。" },
+  2: { id:"bs_sight", name:"暗视", desc:"暗幕层数对你可见；暗幕下首次攻击+3", flavor:"黑暗里，你睁开了另一只眼。" },
+  1: { id:"bs_key",   name:"门钥", desc:"开门类技能造成的自伤改为对你有利：回5理智", flavor:"门后的东西，把钥匙给了你。" },
+};
+function hasBossSpecial(id) { return S.bossSpecials.includes(id); }
+function tryBossSpecialDrop(floor) {
+  const spec = BOSS_SPECIALS[floor];
+  if (!spec) return null;
+  if (hasBossSpecial(spec.id)) return null; // 已有则不再掉
+  S.bossPity = (S.bossPity || 0) + 1;
+  const force = S.bossPity >= 4;
+  const chance = 0.12; // 12%
+  if (force || Math.random() < chance) {
+    S.bossPity = 0;
+    S.bossSpecials.push(spec.id);
+    return spec;
+  }
+  return null;
+}
+
+/* ============ 加权爆率 ============ */
+function getSkillWeights(kind) {
+  if (kind === "boss") return { common: 0.30, rare: 0.50, legend: 0.20 };
+  if (kind === "elite") return { common: 0.50, rare: 0.40, legend: 0.10 };
+  if (kind === "hidden") return { common: 0.20, rare: 0.40, legend: 0.40 };
+  if (kind === "shop") return { common: 0.50, rare: 0.40, legend: 0.10 };
+  return { common: 0.70, rare: 0.28, legend: 0.02 };
+}
+function getEquipWeights(kind) {
+  if (kind === "boss") return { common: 0.20, rare: 0.50, legend: 0.30 };
+  if (kind === "elite") return { common: 0.40, rare: 0.50, legend: 0.10 };
+  if (kind === "shop") return { common: 0.50, rare: 0.40, legend: 0.10 };
+  return { common: 0.65, rare: 0.30, legend: 0.05 };
+}
+function pickWeightedSkills(count, kind) {
+  let pool = getAvailableSkills();
+  // 道路偏向：约 55% 抽到本道技能
+  if (S.path) {
+    const bias = pool.filter(s => s.path === S.path);
+    const other = pool.filter(s => s.path !== S.path);
+    const mixed = [];
+    while (mixed.length < pool.length) {
+      if (bias.length && (mixed.length === 0 || Math.random() < 0.55)) {
+        mixed.push(bias.splice(Math.floor(Math.random()*bias.length),1)[0]);
+      } else if (other.length) {
+        mixed.push(other.splice(Math.floor(Math.random()*other.length),1)[0]);
+      } else if (bias.length) {
+        mixed.push(bias.splice(Math.floor(Math.random()*bias.length),1)[0]);
+      } else break;
+    }
+    pool = mixed.length ? mixed : getAvailableSkills();
+  }
+  const weights = getSkillWeights(kind || "normal");
+  const common = pool.filter(s => s.rarity === "common");
+  const rare = pool.filter(s => s.rarity === "rare");
+  const legend = pool.filter(s => s.rarity === "legend");
+  const picks = [];
+  while (picks.length < count) {
+    const r = Math.random();
+    let pick;
+    if (r < weights.common && common.length) pick = common.splice(Math.floor(Math.random()*common.length),1)[0];
+    else if (r < weights.common + weights.rare && rare.length) pick = rare.splice(Math.floor(Math.random()*rare.length),1)[0];
+    else if (legend.length) pick = legend.splice(Math.floor(Math.random()*legend.length),1)[0];
+    else if (common.length) pick = common.splice(Math.floor(Math.random()*common.length),1)[0];
+    else if (rare.length) pick = rare.splice(Math.floor(Math.random()*rare.length),1)[0];
+    if (pick) picks.push(pick); else break;
+  }
+  return picks;
+}
+function hasPathPassive(lv) { return (S.pathPassives || []).includes(lv); }
+function applyPathPassive(lv) {
+  if (!S.path || !PATHS[S.path] || !PATHS[S.path].passives[lv]) return null;
+  if (hasPathPassive(lv)) return null;
+  S.pathPassives.push(lv);
+  const p = PATHS[S.path].passives[lv];
+  if (S.path === "zhenhun" && lv === 6) { S.maxHP += 15; S.hp = Math.min(S.maxHP, S.hp + 15); }
+  return p;
+}
+function checkPathPassivesOnLevel() {
+  const gained = [];
+  for (const lv of [3, 6, 9]) {
+    if (S.level >= lv) {
+      const p = applyPathPassive(lv);
+      if (p) gained.push(p);
+    }
+  }
+  return gained;
+}
+function pickWeightedEquips(count, kind) {
+  const pool = EQUIPS.filter(e => !e.exclusive && !hasEquip(e.id));
+  const weights = getEquipWeights(kind || "treasure");
+  const common = pool.filter(e => e.rarity === "common");
+  const rare = pool.filter(e => e.rarity === "rare");
+  const legend = pool.filter(e => e.rarity === "legend");
+  const picks = [];
+  while (picks.length < count) {
+    const r = Math.random();
+    let pick;
+    if (r < weights.common && common.length) pick = common.splice(Math.floor(Math.random()*common.length),1)[0];
+    else if (r < weights.common + weights.rare && rare.length) pick = rare.splice(Math.floor(Math.random()*rare.length),1)[0];
+    else if (legend.length) pick = legend.splice(Math.floor(Math.random()*legend.length),1)[0];
+    else if (common.length) pick = common.splice(Math.floor(Math.random()*common.length),1)[0];
+    else if (rare.length) pick = rare.splice(Math.floor(Math.random()*rare.length),1)[0];
+    if (pick) picks.push(pick); else break;
+  }
+  return picks;
+}
+/* ============ 普通怪 ============ */
+const NORMAL_POOL = {
+  6: [
+    { name:"敲门鬼", hp:16, dmg:3, intro:"它站在走廊尽头。\n它没有脸。\n手指还停在门板上。\n\n它敲了敲门。\n一下。两下。三下。\n和你在607听见的节奏一样。\n\n它转过身。空荡荡的脸对着你。", skills:[{ name:"敲门", type:"attack", dmg:3 },{ name:"三连敲", type:"special", dmg:8 }], weakness:"定力可以打断连击。", intentPool:["敲门","敲门","敲门","三连敲"], battleLines:["它敲了一下。","它又敲了一下。","它在数。"] },
+    { name:"影子鬼", hp:14, dmg:3, intro:"墙角有一道影子。\n灯没有动。你也没有动。\n\n影子自己拉长了。\n贴着踢脚线，一点一点爬近。\n\n你抬脚的时候，它停了一下。", skills:[{ name:"缠绕", type:"attack", dmg:3 },{ name:"拉扯", type:"special", dmg:6 }], weakness:"灼烧可以驱散影子。", intentPool:["缠绕","缠绕","拉扯"], battleLines:["影子拉长了。","它在靠近。","它缠上了你的脚。"] },
+    { name:"低语鬼", hp:18, dmg:4, intro:"你听见墙里有人在说话。\n很轻。像隔着棉花。\n\n你贴过去。声音更清楚了。\n它在念名字。\n有一个，像你的。", skills:[{ name:"低语", type:"attack", dmg:3 },{ name:"尖叫", type:"special", dmg:7 }], weakness:"灵感高时可以听清它说的话。", intentPool:["低语","低语","尖叫"], battleLines:["它在说话。","它的声音越来越近。","它在叫你。"] },
+  ],
+  5: [
+    { name:"镜子鬼", hp:22, dmg:4, intro:"镜子立在墙边。不知道谁搬来的。\n\n镜子里的你慢了半拍。\n嘴角先动了。\n然后它笑了。\n\n你没有笑。", skills:[{ name:"镜面", type:"defend", block:5 },{ name:"镜像", type:"special", dmg:5 },{ name:"反光", type:"attack", dmg:4 }], weakness:"连续攻击可以打碎镜面。", intentPool:["镜面","镜像","反光","反光"], battleLines:["镜面在动。","你看见了自己。","它在模仿你。"] },
+    { name:"玻璃鬼", hp:20, dmg:5, intro:"地上全是碎玻璃。\n有人扫过，又碎了一次。\n\n有一片自己翻了个面。\n它在拼。拼成一只眼睛。\n\n眼睛看着你。", skills:[{ name:"碎片", type:"attack", dmg:4 },{ name:"割裂", type:"special", dmg:7 }], weakness:"定力可以挡住碎片。", intentPool:["碎片","碎片","割裂"], battleLines:["碎片飞起来了。","它在割你。","玻璃上倒映着你的脸。"] },
+    { name:"回音鬼", hp:24, dmg:4, intro:"你听见自己的回声。\n但你没有说话。", skills:[{ name:"回音", type:"attack", dmg:4 },{ name:"重复", type:"special", dmg:6 }], weakness:"沉默可以削弱回音。", intentPool:["回音","回音","重复"], battleLines:["回音在重复。","它在模仿你的声音。","它在喊你的名字。"] },
+  ],
+  4: [
+    { name:"水鬼", hp:28, dmg:5, intro:"浴室的水龙头全开了。\n流出来的水是红的。\n\n水声很大。大到你听不见自己的脚步。\n水雾里有个人形。\n它在搓手。像在洗手。", skills:[{ name:"溅水", type:"attack", dmg:4 },{ name:"淹没", type:"special", dmg:7 },{ name:"水压", type:"special" }], weakness:"灼烧可以清除潮湿。", intentPool:["溅水","溅水","淹没","水压"], battleLines:["水漫上来了。","它的手是湿的。","你在发抖。"] },
+    { name:"潮湿鬼", hp:26, dmg:5, intro:"地上有水迹。\n水迹在移动。\n它在靠近你。", skills:[{ name:"渗水", type:"attack", dmg:4 },{ name:"湿身", type:"special", dmg:6 }], weakness:"灼烧可以蒸发它。", intentPool:["渗水","渗水","湿身"], battleLines:["水迹靠近了。","它在缠你的脚。","水越来越深。"] },
+    { name:"滴水鬼", hp:30, dmg:5, intro:"你听见水滴声。\n不是从水龙头。\n是从天花板。", skills:[{ name:"滴水", type:"attack", dmg:5 },{ name:"滴水穿石", type:"special", dmg:8 }], weakness:"定力可以挡住水滴。", intentPool:["滴水","滴水","滴水穿石"], battleLines:["水滴在你头上。","它一直在滴。","你数不清滴了多少下。"] },
+  ],
+  3: [
+    { name:"饿鬼", hp:34, dmg:6, intro:"打饭窗口后面有东西。\n它在吃。吃得很慢。\n\n碗沿刮过不锈钢台面。\n刺耳。\n\n它转过来了。\n它没有脸。它有牙。", skills:[{ name:"啃咬", type:"attack", dmg:5 },{ name:"吞食", type:"special", dmg:8 }], weakness:"饿鬼啃咬时无法防御。", intentPool:["啃咬","啃咬","吞食"], battleLines:["它饿了。","它在咬你。","它在吞。"] },
+    { name:"啃食鬼", hp:32, dmg:6, intro:"你听见咀嚼声。\n有什么东西在啃墙。", skills:[{ name:"啃食", type:"attack", dmg:6 },{ name:"撕咬", type:"special", dmg:7 }], weakness:"定力可以挡住它的牙。", intentPool:["啃食","啃食","撕咬"], battleLines:["它在啃。","它咬住了你的影子。","它在咀嚼。"] },
+    { name:"饥饿鬼", hp:36, dmg:6, intro:"它很瘦。\n它的眼睛是空的。\n它看着你。", skills:[{ name:"索食", type:"attack", dmg:5 },{ name:"夺食", type:"special", dmg:9 }], weakness:"汲取可以反哺。", intentPool:["索食","索食","夺食"], battleLines:["它伸出手。","它很饿。","它在抢你的东西。"] },
+  ],
+  2: [
+    { name:"黑暗鬼", hp:42, dmg:7, intro:"2楼很黑。\n你看不见它。\n但你听见它在呼吸。\n\n呼吸比你的慢。\n像故意让你听见。\n\n你往前走的时候，呼吸声跟在右侧。", skills:[{ name:"暗幕", type:"attack", dmg:6 },{ name:"失明", type:"special" }], weakness:"灵感高时可以看到暗幕层数。", intentPool:["暗幕","暗幕","暗幕","失明"], battleLines:["更黑了。","你什么都看不见。","它在靠近。"] },
+    { name:"暗幕鬼", hp:40, dmg:7, intro:"有什么东西蒙住了你的眼。\n你看不清了。", skills:[{ name:"蒙眼", type:"attack", dmg:6 },{ name:"吞噬", type:"special", dmg:9 }], weakness:"灼烧可以照亮黑暗。", intentPool:["蒙眼","蒙眼","吞噬"], battleLines:["你什么都看不见了。","它在暗处。","你只能听见自己的心跳。"] },
+    { name:"夜影鬼", hp:46, dmg:8, intro:"黑暗中有一道影子。\n它比你高。\n它在等你。", skills:[{ name:"夜袭", type:"attack", dmg:7 },{ name:"暗影", type:"special", dmg:10 }], weakness:"定力可以挡住夜袭。", intentPool:["夜袭","夜袭","暗影"], battleLines:["影子在动。","它比你高。","它在看你。"] },
+  ],
+  1: [
+    { name:"门鬼", hp:54, dmg:8, intro:"1楼大厅。\n尽头有一扇门。\n门前站着一个人。", skills:[{ name:"关门", type:"attack", dmg:8 },{ name:"开门", type:"special", dmg:12 },{ name:"锁门", type:"special" }], weakness:"开门时自伤。", intentPool:["关门","关门","开门","锁门"], battleLines:["门在响。","它不想让你走。","它在推门。"] },
+    { name:"锁门鬼", hp:52, dmg:8, intro:"门上有一把锁。\n锁在动。", skills:[{ name:"锁链", type:"attack", dmg:7 },{ name:"禁锢", type:"special", dmg:10 }], weakness:"定力可以挣脱锁链。", intentPool:["锁链","锁链","禁锢"], battleLines:["锁链缠上了你。","它在拉。","你动不了。"] },
+    { name:"守门影", hp:58, dmg:9, intro:"门边有一道影子。\n它一直在那里。\n它看着每一个经过的人。", skills:[{ name:"守卫", type:"attack", dmg:8 },{ name:"驱逐", type:"special", dmg:12 }], weakness:"灵感高时可以看到它的破绽。", intentPool:["守卫","守卫","驱逐"], battleLines:["影子挡住了门。","它在看你。","它在等你离开。"] },
+  ],
+};
+
+/* ============ 精英怪 ============ */
+const ELITE_POOL = {
+  6: [
+    { name:"叩门者", hp:32, dmg:6, intro:"它敲了敲门。\n一下。两下。三下。\n第四下。\n门开了。", skills:[{ name:"敲门", type:"attack", dmg:5 },{ name:"三连敲", type:"special", dmg:12 },{ name:"第四下", type:"special", dmg:15 }], weakness:"格挡可以打断连击。", intentPool:["敲门","敲门","三连敲","第四下"], battleLines:["它在敲。","它在数。","第四下要来了。"] },
+    { name:"影缚者", hp:30, dmg:7, intro:"影子从墙上下来了。\n它站在你面前。\n它和你一样高。", skills:[{ name:"缠绕", type:"attack", dmg:6 },{ name:"绞杀", type:"special", dmg:13 }], weakness:"灼烧可以驱散它。", intentPool:["缠绕","缠绕","绞杀"], battleLines:["影子缠上了你。","它在收紧。","你喘不过气。"] },
+  ],
+  5: [
+    { name:"碎镜者", hp:42, dmg:7, intro:"镜子碎了。\n碎片拼成了一个人。\n它和你一模一样。", skills:[{ name:"镜面", type:"defend", block:10 },{ name:"镜像", type:"special", dmg:8 },{ name:"万镜", type:"special", dmg:14 }], weakness:"连续攻击可以打碎镜面。", intentPool:["镜面","镜像","反光","万镜"], battleLines:["镜面在动。","你看见了很多个自己。","它们都在笑。"] },
+    { name:"玻璃心", hp:40, dmg:8, intro:"碎玻璃拼成了一个形状。\n它在看你。", skills:[{ name:"碎片", type:"attack", dmg:7 },{ name:"割裂", type:"special", dmg:12 }], weakness:"定力可以挡住碎片。", intentPool:["碎片","碎片","割裂"], battleLines:["碎片飞起来了。","它在割你。","玻璃上全是你的血。"] },
+  ],
+  4: [
+    { name:"溺者", hp:52, dmg:8, intro:"水漫过了你的腰。\n水中央站着一个人。\n它很瘦。\n它伸出手。", skills:[{ name:"溅水", type:"attack", dmg:6 },{ name:"淹没", type:"special", dmg:11 },{ name:"水压", type:"special" },{ name:"漩涡", type:"special", dmg:15 }], weakness:"灼烧可以清除潮湿。", intentPool:["溅水","淹没","水压","漩涡"], battleLines:["水漫上来了。","它在拉你。","你沉下去了。"] },
+    { name:"滴水者", hp:50, dmg:8, intro:"水滴声越来越快。\n天花板在裂。", skills:[{ name:"滴水", type:"attack", dmg:7 },{ name:"滴水穿石", type:"special", dmg:12 },{ name:"瀑布", type:"special", dmg:16 }], weakness:"定力可以挡住水。", intentPool:["滴水","滴水穿石","瀑布"], battleLines:["水滴在你头上。","它越来越快。","你抬不起头。"] },
+  ],
+  3: [
+    { name:"吞食者", hp:62, dmg:9, intro:"它吃了一整间食堂。\n桌椅是歪的。碗是空的。\n\n它还是饿。\n它看着你。\n像在看下一道菜。", skills:[{ name:"啃咬", type:"attack", dmg:7 },{ name:"吞食", type:"special", dmg:12 },{ name:"饥饿", type:"special", dmg:15 }], weakness:"饿鬼啃咬时无法防御。", intentPool:["啃咬","啃咬","吞食","饥饿"], battleLines:["它饿了。","它在咬你。","它在吞。"] },
+    { name:"啃骨者", hp:60, dmg:9, intro:"墙被啃出了一个大洞。\n洞里有一双眼睛。", skills:[{ name:"啃食", type:"attack", dmg:8 },{ name:"撕咬", type:"special", dmg:13 }], weakness:"定力可以挡住它的牙。", intentPool:["啃食","啃食","撕咬"], battleLines:["它在啃。","它咬住了你。","它在咀嚼。"] },
+  ],
+  2: [
+    { name:"暗幕", hp:75, dmg:10, intro:"黑暗里有一只眼睛。\n它很大。大到你分不清是近还是远。\n\n它眨了一下。\n黑暗跟着缩了一下。\n\n它在看你。", skills:[{ name:"暗幕", type:"attack", dmg:8 },{ name:"失明", type:"special" },{ name:"吞噬", type:"special", dmg:16 }], weakness:"灵感高时可以看到它。", intentPool:["暗幕","暗幕","失明","吞噬"], battleLines:["更黑了。","你什么都看不见。","它在看着你。"] },
+    { name:"夜行者", hp:70, dmg:11, intro:"一道影子站在你面前。\n它比你高。\n它比你宽。\n它比你黑。", skills:[{ name:"夜袭", type:"attack", dmg:9 },{ name:"暗影", type:"special", dmg:14 }], weakness:"定力可以挡住夜袭。", intentPool:["夜袭","夜袭","暗影"], battleLines:["影子在动。","它比你高。","它在看你。"] },
+  ],
+  1: [
+    { name:"守门人", hp:95, dmg:12, intro:"门开了。\n门后站着一个人。\n它一直在等你。\n\n它的手按在门框上。\n指节发白。\n\n“还早。”它说。\n声音不像从嘴里出来。", skills:[{ name:"关门", type:"attack", dmg:10 },{ name:"开门", type:"special", dmg:15 },{ name:"锁门", type:"special" },{ name:"门后", type:"special", dmg:20 }], weakness:"开门时自伤。", intentPool:["关门","关门","开门","锁门","门后"], battleLines:["门在响。","它不想让你走。","它在推门。"] },
+    { name:"锁链者", hp:92, dmg:12, intro:"门被锁了。\n锁链缠满了整扇门。\n锁链在动。", skills:[{ name:"锁链", type:"attack", dmg:9 },{ name:"禁锢", type:"special", dmg:14 },{ name:"永锁", type:"special", dmg:18 }], weakness:"定力可以挣脱锁链。", intentPool:["锁链","锁链","禁锢","永锁"], battleLines:["锁链缠上了你。","它在拉。","你动不了。"] },
+  ],
+};
+
+/* ============ BOSS ============ */
+const BOSS_POOL = {
+  6: { name:"第四只手", hp:55, dmg:8, intro: BOSS_INTRO[6], skills:[{ name:"敲门", type:"attack", dmg:7 },{ name:"三连敲", type:"special", dmg:12 },{ name:"第四下", type:"special", dmg:16 }], weakness:"格挡可以打断连击。", intentPool:["敲门","敲门","三连敲","第四下"], battleLines:["它在敲。","一下。","两下。","它在数。","第四下要来了。","门在震。","它等你应。"] },
+  5: { name:"镜中我", hp:70, dmg:10, intro: BOSS_INTRO[5], skills:[{ name:"镜面", type:"defend", block:12 },{ name:"镜像", type:"special", dmg:10 },{ name:"万镜", type:"special", dmg:16 }], weakness:"连续攻击可以打碎镜面。", intentPool:["镜面","镜像","万镜","万镜"], battleLines:["镜面在动。","你看见了很多个自己。","它们都在笑。","有一个嘴型在说：留下。","玻璃里全是你。"] },
+  4: { name:"水底人", hp:85, dmg:11, intro: BOSS_INTRO[4], skills:[{ name:"溅水", type:"attack", dmg:8 },{ name:"淹没", type:"special", dmg:13 },{ name:"水压", type:"special" },{ name:"漩涡", type:"special", dmg:18 }], weakness:"灼烧可以清除潮湿。", intentPool:["溅水","淹没","水压","漩涡"], battleLines:["水漫上来了。","它在拉你。","你沉下去了。","水是热的。","它在水下开口。"] },
+  3: { name:"空腹者", hp:100, dmg:12, intro: BOSS_INTRO[3], skills:[{ name:"啃咬", type:"attack", dmg:9 },{ name:"吞食", type:"special", dmg:14 },{ name:"饥饿", type:"special", dmg:18 }], weakness:"饿鬼啃咬时无法防御。", intentPool:["啃咬","吞食","饥饿","饥饿"], battleLines:["它饿了。","它在咬你。","它在吞。","碗又空了。","它还在看你。"] },
+  2: { name:"暗眼", hp:115, dmg:13, intro: BOSS_INTRO[2], skills:[{ name:"暗幕", type:"attack", dmg:10 },{ name:"失明", type:"special" },{ name:"吞噬", type:"special", dmg:20 }], weakness:"灵感高时可以看到暗幕层数。", intentPool:["暗幕","暗幕","失明","吞噬"], battleLines:["更黑了。","你什么都看不见。","它在靠近。","呼吸就在耳边。","它说：再近一点。"] },
+  1: { name:"门后者", hp:140, dmg:15, intro: BOSS_INTRO[1], skills:[{ name:"关门", type:"attack", dmg:12 },{ name:"开门", type:"special", dmg:18 },{ name:"锁门", type:"special" },{ name:"门后", type:"special", dmg:25 }], weakness:"开门时自伤。", intentPool:["关门","关门","开门","锁门","门后"], battleLines:["门在响。","它不想让你走。","它在推门。","“留下来。”","光在门缝里抖。","它挡住了门。"] },
+};
+
+/* ============ 隐藏怪 ============ */
+const HIDDEN_POOL = {
+  6: { name:"门缝里的眼睛", hp:30, dmg:5, intro:"你路过607的门。\n门缝里有什么东西。\n它在看你。\n它一直在看。", skills:[{ name:"窥视", type:"attack", dmg:5 },{ name:"注视", type:"special", dmg:10 },{ name:"眨眼", type:"special", dmg:14 }], weakness:"灵感高时可以看到它在眨眼的瞬间。", intentPool:["窥视","窥视","注视","眨眼"], battleLines:["它在看你。","它眨了一下。","它没有眨眼。"] },
+  5: { name:"镜子背后", hp:40, dmg:6, intro:"镜子后面有什么东西。\n你一直没看过。\n现在你看见了。", skills:[{ name:"伸手", type:"attack", dmg:6 },{ name:"拉拽", type:"special", dmg:11 },{ name:"替换", type:"special", dmg:16 }], weakness:"灵感高时可以看到它的手。", intentPool:["伸手","伸手","拉拽","替换"], battleLines:["它伸出手。","它在拉你。","它想出来。"] },
+  4: { name:"水面下的倒影", hp:50, dmg:7, intro:"水面很平静。\n但倒影不对。\n倒影在动。\n你没有动。", skills:[{ name:"波纹", type:"attack", dmg:7 },{ name:"下沉", type:"special", dmg:12 },{ name:"倒影", type:"special", dmg:18 }], weakness:"灼烧可以打破倒影。", intentPool:["波纹","波纹","下沉","倒影"], battleLines:["水在动。","倒影在看你。","它在模仿你。"] },
+  3: { name:"桌子底下", hp:60, dmg:8, intro:"桌子底下有东西。\n它一直在那里。\n它一直在吃。", skills:[{ name:"啃咬", type:"attack", dmg:8 },{ name:"吞咽", type:"special", dmg:13 },{ name:"抓取", type:"special", dmg:20 }], weakness:"灵感高时可以看到它的手。", intentPool:["啃咬","啃咬","吞咽","抓取"], battleLines:["它在啃。","它在吞。","它在拉你的脚。"] },
+  2: { name:"黑暗里的东西", hp:70, dmg:9, intro:"黑暗里有东西。\n它一直在那里。\n你一进2楼就感觉到了。\n\n呼吸声很近。\n近到像从你领口里出来。\n\n你没有开灯。你开不了。", skills:[{ name:"抓取", type:"attack", dmg:9 },{ name:"吞噬", type:"special", dmg:14 },{ name:"包围", type:"special", dmg:22 }], weakness:"灵感高时可以看到它的轮廓。", intentPool:["抓取","抓取","吞噬","包围"], battleLines:["它在动。","它在靠近。","它在包围你。"] },
+  1: { name:"门缝下面", hp:80, dmg:10, intro:"门缝下面有东西。\n它一直在那里。\n它一直在等。", skills:[{ name:"拉扯", type:"attack", dmg:10 },{ name:"拖拽", type:"special", dmg:15 },{ name:"关门", type:"special", dmg:24 }], weakness:"灵感高时可以看到它的手指。", intentPool:["拉扯","拉扯","拖拽","关门"], battleLines:["它在拉。","它在拖。","它在关门。"] },
+};
+
+/* ============ 装备（24件） ============ */
+const EQUIPS = [
+  { id:"iron_stick", name:"铁棍",     desc:"精神冲击+2",              price:30, rarity:"common", flavor:"锈了。但还能用。" },
+  { id:"wristband",  name:"护腕",     desc:"每回合开始+3定力",        price:30, rarity:"common", flavor:"皮子已经磨破了。" },
+  { id:"vial",       name:"血瓶",     desc:"战斗结束回5理智",          price:25, rarity:"common", flavor:"里面的液体是温的。" },
+  { id:"mirror",     name:"铜镜",     desc:"灵感+1",                  price:25, rarity:"common", flavor:"照出来的人比你老。" },
+  { id:"soft_shoes", name:"软底鞋",   desc:"战斗第一回合专注+1",       price:30, rarity:"common", flavor:"走路没声音。" },
+  { id:"magnifier",  name:"放大镜",   desc:"战斗开始时灵感+1",        price:30, rarity:"common", flavor:"你看得更清楚了一点。" },
+  { id:"bandage",    name:"绷带",     desc:"每层第一次受伤减半",      price:25, rarity:"common", flavor:"缠在手上。有点旧。" },
+  { id:"chalk",      name:"粉笔",     desc:"事件中多一个选项",        price:20, rarity:"common", flavor:"你也不知道它有什么用。" },
+  { id:"candle",     name:"蜡烛",     desc:"战斗第一回合免疫伤害",    price:35, rarity:"common", flavor:"火苗很小。但一直不灭。" },
+  { id:"hunter_eye", name:"猎人之眼", desc:"精神冲击+2",              price:50, rarity:"rare",   flavor:"你看见了它的弱点。" },
+  { id:"stone_heart",name:"石心",     desc:"最大理智+20",             price:50, rarity:"rare",   flavor:"心脏变硬了。" },
+  { id:"spirit_eye", name:"灵视之眼", desc:"战斗开始时灵感+2",        price:50, rarity:"rare",   flavor:"你看见了看不见的东西。" },
+  { id:"lighter",    name:"打火机",   desc:"灼烧伤害+3，清2层潮湿",    price:50, rarity:"rare",   flavor:"火苗是蓝的。" },
+  { id:"amulet",     name:"护身符",   desc:"免疫一次崩溃",            price:60, rarity:"rare",   flavor:"符纸是黄的。上面没有字。" },
+  { id:"old_key",    name:"旧钥匙",   desc:"事件中多一个选项",        price:45, rarity:"rare",   flavor:"你不知道它能开哪扇门。" },
+  { id:"cat_eye",    name:"猫眼石",   desc:"暴击率+10%",              price:55, rarity:"rare",   flavor:"石头里有一只眼睛。" },
+  { id:"iron_chain", name:"铁链",     desc:"战斗开始+5定力",          price:50, rarity:"rare",   flavor:"很重。但握着安心。" },
+  { id:"smoke_bomb", name:"烟雾弹",   desc:"可跳过鬼魂一次行动",      price:60, rarity:"rare",   flavor:"只能扔一次。" },
+  { id:"safety_charm",name:"平安符",  desc:"理智归零时回10理智",      price:65, rarity:"rare",   flavor:"符上的字已经模糊了。" },
+  { id:"jade",       name:"玉佩",     desc:"每场战斗第一次精神冲击减半", price:80, rarity:"legend", flavor:"裂纹从中间穿过。" },
+  { id:"hourglass",  name:"时间沙漏", desc:"每回合专注+1",            price:100,rarity:"legend", flavor:"沙子在往上流。" },
+  { id:"bronze_mirror",name:"青铜镜", desc:"战斗开始自动看到鬼魂弱点", price:90, rarity:"legend", flavor:"铜镜里的光，比你老。" },
+  { id:"old_jade",   name:"旧玉佩",   desc:"每层第一次崩溃免疫，回20理智", price:85, rarity:"legend", flavor:"裂纹从中间穿过。" },
+  { id:"time_glass", name:"时之沙",   desc:"每回合专注+1，但首次攻击-2", price:95, rarity:"legend", flavor:"沙子在往上流。" },
+  { id:"bone_key",   name:"骨钥匙",   desc:"事件中多两个选项",        price:75, rarity:"legend", flavor:"很轻。像是某种动物的骨头。" },
+  { id:"coin_sword", name:"铜钱剑",   desc:"所有攻击无视定力，精神冲击+2", price:0, rarity:"legend", exclusive:true, flavor:"铜钱串成的剑。很轻。但很利。" },
+  { id:"paper_doll", name:"纸人替身", desc:"每层第一次崩溃免疫，回15理智", price:0, rarity:"legend", exclusive:true, flavor:"纸人替你死了一次。它还站着。" },
+  { id:"shop_ledger",name:"店主的账本",desc:"每回合专注+1，但技能冷却+1", price:0, rarity:"legend", exclusive:true, flavor:"账本上记着很多名字。你的名字也在上面。" },
+];
+
+/* ============ 天赋（13个） ============ */
+const TALENTS = [
+  // 普通
+  { id:"t_insight",  name:"灵视",     quality:"common", desc:"开局灵感+3", flavor:"你从小就能看到别人看不到的东西。\n你妈说那是想象力太丰富。" },
+  { id:"t_iron",     name:"铁胆",     quality:"common", desc:"每场战斗首次受到的精神冲击减半", flavor:"你爸教你，怕的时候也要站直。\n你一直记着。" },
+  { id:"t_cat",      name:"猫步",     quality:"common", desc:"每回合第一次技能不进入冷却", flavor:"你习惯了晚上不发出声音。\n从小就这样。" },
+  { id:"t_pocket",   name:"纸钱缘",   quality:"common", desc:"开局+25纸钱，战斗结束纸钱+5", flavor:"口袋里总有几张纸。\n你不记得是谁塞的。" },
+  { id:"t_steady",   name:"沉心",     quality:"common", desc:"最大理智+12，开局回满", flavor:"你不容易慌。\n至少你以为自己不容易慌。" },
+  // 高级
+  { id:"t_sixth",    name:"第六感",   quality:"rare",   desc:"始终可见鬼魂意图（无需灵感）", flavor:"你总觉得有什么在看着你。\n现在你确定了。" },
+  { id:"t_blood",    name:"血怒",     quality:"rare",   desc:"已损理智越高，精神冲击越高（最高+50%）", flavor:"你生气的时候什么都不怕。\n你不太喜欢这样的自己。" },
+  { id:"t_echo",     name:"回响",     quality:"rare",   desc:"使用技能后25%不进入冷却", flavor:"你总能听见不该听见的声音。\n有时候是你自己的。" },
+  { id:"t_thorn",    name:"荆棘",     quality:"rare",   desc:"受击反弹4点精神冲击", flavor:"别人伤你的时候，自己也会疼。" },
+  { id:"t_vampire",  name:"汲取",     quality:"rare",   desc:"造成精神冲击时回复2点理智", flavor:"你从疼痛里学会活下去。" },
+  { id:"t_scar",     name:"旧伤",     quality:"rare",   desc:"每场战斗第一个技能专注消耗-1（最低0）", flavor:"伤疤提醒你：你还在。" },
+  { id:"t_whisper",  name:"耳语",     quality:"rare",   desc:"击杀时50%额外+1灵感", flavor:"它们倒下时，会跟你说一句悄悄话。" },
+  // 传说
+  { id:"t_double",   name:"双重",     quality:"legend", desc:"每回合第一个技能精神冲击+50%", flavor:"你总觉得一次不够。" },
+  { id:"t_stop",     name:"凝时",     quality:"legend", desc:"每场战斗可一次跳过鬼魂回合", flavor:"有一瞬间，时间停了。" },
+  { id:"t_reaper",   name:"收束",     quality:"legend", desc:"目标理智低于25%时，精神冲击翻倍", flavor:"你知道什么时候该结束。" },
+  { id:"t_immortal", name:"不朽",     quality:"legend", desc:"崩溃时复活一次，恢复30%理智", flavor:"你不记得这是第几次了。" },
+  { id:"t_anchor",   name:"锚点",     quality:"legend", desc:"理智首次降至30以下时，立即获得12定力并回复8理智（每场1次）", flavor:"有人在你心里钉了一根钉子。\n怕的时候，你就抓住它。" },
+  { id:"t_packrat",  name:"拾荒",     quality:"common", desc:"宝箱与战斗纸钱+20%", flavor:"你习惯低头看路。\n地上总有别人不要的东西。" },
+  { id:"t_thick",    name:"厚脸皮",   quality:"common", desc:"最大理智+8，受击时有15%再减2点", flavor:"别人说你钝。\n钝有钝的好处。" },
+  { id:"t_lightfoot",name:"轻步",     quality:"common", desc:"战斗第一回合额外+1定力", flavor:"你走路尽量不响。\n这栋楼里，响声会招东西。" },
+  { id:"t_memo",     name:"备忘",     quality:"rare",   desc:"开局灵感+1，安全屋静思额外+1灵感", flavor:"你在手心写过字。\n洗不掉的那种。" },
+  { id:"t_grudge",   name:"记仇",     quality:"rare",   desc:"击杀后下一次精神冲击+3", flavor:"你记得谁先动手。\n即使它没有脸。" },
+  { id:"t_veil",     name:"薄幕",     quality:"rare",   desc:"每场战斗开始获得4定力", flavor:"你总觉得身前有一层纱。\n薄，但有用。" },
+  { id:"t_laststand",name:"残灯",     quality:"legend", desc:"理智低于25%时，专注上限视为+1（仍受4点封顶）", flavor:"灯快灭了。\n你反而更清醒。" },
+];
+
+/* ============ 隐藏事件 ============ */
+const HIDDEN_EVENTS = [
+  { title:"墙上的字", scene:"墙上有一行字。\n不是用笔写的。\n是用手指写的。\n“别往下走。”", choices:[
+    { label:"读下去", run:()=>{ gainInspiration(3); S.hp -= 10; addLogEvent("你读了。\n你看见了什么。\n你不该看的。\n灵感+3，-10 理智。"); } },
+    { label:"走开", run:()=>{ addLogEvent("你走了。\n墙上的字消失了。"); } },
+  ]},
+  { title:"地上的照片", scene:"地上有一张照片。\n照片上是你。\n但你从来没有拍过这张照片。", choices:[
+    { label:"捡起来", run:()=>{ gainInspiration(2); S.paper += 30; addLogEvent("你捡起来。\n照片上的你在笑。\n你没有笑。\n灵感+2，+30 纸钱。"); } },
+    { label:"不碰", run:()=>{ addLogEvent("你走了。\n照片还在那里。"); } },
+  ]},
+  { title:"纸人", scene:"地上有一个纸人。\n做得像你。\n它手里有一张牌。", choices:[
+    { label:"拿走牌", run:()=>{ const pool = SKILLS.filter(x=>x.rarity==="legend" && (x.req||0) <= S.inspiration); const s = pool.length ? rnd(pool) : rnd(getAvailableSkills()); if (S.skills.indexOf(null) < 0) { showReplaceSkillFromEvent(s, () => { addLogEvent(`你拿走了牌。\n是「${s.name}」。\n纸人倒了。`); showEventResult(); }); return; } addSkillToSlot(s); addLogEvent(`你拿走了牌。\n是「${s.name}」。\n纸人倒了。`); } },
+    { label:"烧掉纸人", run:()=>{ S.paper += 50; addLogEvent("你烧掉纸人。\n火是蓝的。\n纸人没有挣扎。\n+50 纸钱。"); } },
+  ]},
+  { title:"镜子里的你", scene:"镜子里有一个你。\n但不是你。\n它在等你说话。", choices:[
+    { label:"问它是谁", run:()=>{ gainInspiration(3); addLogEvent("“你是谁？”\n它笑了。\n“我是你。”\n灵感+3。"); } },
+    { label:"砸碎镜子", run:()=>{ S.hp -= 15; S.paper += 40; addLogEvent("你砸碎镜子。\n碎片里全是眼睛。\n-15 理智，+40 纸钱。"); } },
+  ]},
+];
+
+/* ============ 事件池（24个） ============ */
+const EVENTS = [
+  { type:"resource", title:"尸体", scene:"你走了很久。\n走廊没有尽头。\n你看见前面有东西。\n你走近。\n是一具尸体。\n他躺在墙边，像是睡着了。", choices:[
+    { label:"搜身", run:()=>{ gainInspiration(1); S.paper += 10; addLogEvent("你蹲下来。\n他的口袋里有一叠纸钱。\n还有一枚徽章。你拿走了。\n灵感+1。"); } },
+    { label:"离开", run:()=>{ addLogEvent("你绕过他。\n你听见身后有声音。\n你没有回头。"); } },
+  ]},
+  { type:"resource", title:"水池", scene:"你路过洗手池。\n水龙头没关紧。\n滴着水。\n水是红的。\n你看了很久。\n它还在流。", choices:[
+    { label:"洗手", run:()=>{ S.hp = Math.min(S.maxHP, S.hp + 10); addLogEvent("你洗了手。\n血水冲走了。\n你感觉清醒了一些。\n+10 理智。"); } },
+    { label:"不碰", run:()=>{ addLogEvent("你走了。\n身后水滴声停了。\n然后又开始滴。"); } },
+  ]},
+  { type:"resource", title:"旧日记", scene:"地上有一本旧日记。\n封面破了。\n里面的纸是黄的。\n你翻开。\n里面夹着一张牌。", choices:[
+    { label:"拿走", run:()=>{ const s = randomSkill(); if (S.skills.indexOf(null) < 0) { showReplaceSkillFromEvent(s, () => { addLogEvent(`你获得了「${s.name}」。\n日记的主人没有再写下去。`); showEventResult(); }); return; } addSkillToSlot(s); addLogEvent(`你获得了「${s.name}」。\n日记的主人没有再写下去。`); } },
+    { label:"不看", run:()=>{ addLogEvent("你合上日记。\n风把它翻开了。\n你没有回头。"); } },
+  ]},
+  { type:"resource", title:"纸钱堆", scene:"墙角有一堆纸钱。\n烧过的。\n灰还是热的。\n像是有人刚烧完。\n但这里只有你一个人。", choices:[
+    { label:"捡起来", run:()=>{ S.paper += 20; addLogEvent("你捡起纸钱。\n灰落在你手上。\n你没有拍掉。\n+20 纸钱。"); } },
+    { label:"离开", run:()=>{ addLogEvent("你走了。\n身后灰又亮了一下。\n你没有回头。"); } },
+  ]},
+  { type:"resource", title:"热水", scene:"洗手池旁边还有一个水龙头。\n你伸手试了一下。\n是热水。\n在这个地方，水居然是热的。", choices:[
+    { label:"冲一会儿", run:()=>{ S.hp = Math.min(S.maxHP, S.hp + 8); gainInspiration(1); addLogEvent("你把手放在水下。\n热水流过你的手指。\n你感觉自己还清醒。\n+8 理智，灵感+1。"); } },
+    { label:"不碰", run:()=>{ addLogEvent("你走了。\n身后水龙头自己关了。"); } },
+  ]},
+  { type:"resource", title:"药瓶", scene:"地上有一个小药瓶。\n瓶盖没拧紧。\n里面的液体是绿的。\n你闻了一下。\n很苦。", choices:[
+    { label:"喝掉", run:()=>{ S.hp = Math.min(S.maxHP, S.hp + 15); addLogEvent("你喝掉了。\n很苦。\n但你的脑子不疼了。\n+15 理智。"); } },
+    { label:"不喝", run:()=>{ addLogEvent("你把瓶子放回去了。\n你听见瓶子里有声音。\n你没有听清。"); } },
+  ]},
+  { type:"risk", title:"低语", scene:"你听见墙里有人在说话。\n很轻。\n它说：\n“往左走。”\n“往左走。”\n“往左走。”", choices:[
+    { label:"往左走", run:()=>{ if (Math.random() < 0.5) { S.paper += 30; addLogEvent("你往左走。\n走了很久。\n墙角有一叠纸钱。\n+30 纸钱。"); } else { S.hp -= 15; addLogEvent("你往左走。\n走了很久。\n有什么东西从后面撞了你一下。\n-15 理智。"); } } },
+    { label:"往右走", run:()=>{ addLogEvent("你往右走。\n什么都没发生。\n但你觉得错过了什么。"); } },
+    { label:"站在原地", run:()=>{ gainInspiration(1); addLogEvent("你站在原地。\n低语停了。\n你听见了自己的呼吸。\n灵感+1。"); } },
+  ]},
+  { type:"risk", title:"声音", scene:"有人在叫你的名字。\n很远。\n但你认识的人都不在这里。\n你听得出那个声音。\n它很着急。", choices:[
+    { label:"回应", run:()=>{ if (Math.random() < 0.4) { gainInspiration(2); addLogEvent("你回应了。\n那个声音停了。\n你看见了一些东西。\n灵感+2。"); } else { S.hp -= 20; addLogEvent("你回应了。\n有什么东西靠近了。\n你受到了20点精神冲击。"); } } },
+    { label:"沉默", run:()=>{ addLogEvent("你没有说话。\n那个声音消失了。\n你继续走。"); } },
+  ]},
+  { type:"risk", title:"门", scene:"走廊中间有一扇门。\n门缝里透出光。\n很亮。\n像是外面。\n但你不确定。", choices:[
+    { label:"推门", run:()=>{ if (Math.random() < 0.5) { S.paper += 25; addLogEvent("你推开门。\n里面不是外面。\n是一间小房间。\n桌上有一叠纸钱。\n+25 纸钱。"); } else { S.hp -= 20; addLogEvent("你推开门。\n里面很黑。\n有什么东西抓住了你的手。\n-20 理智。"); } } },
+    { label:"继续走", run:()=>{ addLogEvent("你没有推门。\n你从旁边走过去。\n门里的光灭了。"); } },
+  ]},
+  { type:"risk", title:"祭坛", scene:"走廊尽头有一个小祭坛。\n上面有蜡烛。\n还有一张照片。\n照片上的人看不清脸。\n你可以放东西上去。", choices:[
+    { label:"放纸钱", if:()=>S.paper>=20, run:()=>{ S.paper -= 20; S.hp = Math.min(S.maxHP, S.hp + 20); gainInspiration(1); addLogEvent("你把纸钱放在祭坛上。\n蜡烛亮了一下。\n你感觉清醒了一些。\n+20 理智，灵感+1。"); } },
+    { label:"拿走照片", run:()=>{ if (Math.random() < 0.3) { S.hp -= 25; addLogEvent("你拿起照片。\n照片上的人动了。\n你受到了25点精神冲击。"); } else { gainInspiration(3); addLogEvent("你拿起照片。\n照片上的人看着你。\n你认出了他。\n灵感+3。"); } } },
+    { label:"离开", run:()=>{ addLogEvent("你走了。\n身后蜡烛灭了。"); } },
+  ]},
+  { type:"risk", title:"镜子", scene:"墙上有一面旧镜子。\n镜子里的你在看你。\n你动了。\n它也动了。但慢了一点。", choices:[
+    { label:"看", run:()=>{ gainInspiration(2); addLogEvent("你盯着镜子。\n你看见了一些东西。\n灵感+2。"); } },
+    { label:"不看", run:()=>{ addLogEvent("你走了。\n你听见镜子里有人在敲玻璃。\n你没有回头。"); } },
+  ]},
+  { type:"risk", title:"脚步声", scene:"你听见身后有脚步声。\n一步。一步。\n跟着你的节奏。\n你停下来。\n它也停下来。", choices:[
+    { label:"回头看", run:()=>{ if (Math.random() < 0.5) { gainInspiration(2); addLogEvent("你回头。\n什么都没有。\n但地上有脚印。\n灵感+2。"); } else { S.hp -= 15; addLogEvent("你回头。\n有什么东西撞了你一下。\n-15 理智。"); } } },
+    { label:"继续走", run:()=>{ addLogEvent("你继续走。\n脚步声跟着你走了一段。\n然后停了。"); } },
+  ]},
+  { type:"story", title:"墙上的字", scene:"墙上有人用指甲刻了一行字。\n“我叫林默。我住607。”\n下面还有一行。\n但看不清了。", choices:[
+    { label:"仔细看", run:()=>{ gainInspiration(2); S.hp -= 5; addLogEvent("你凑近。\n下面那行字是：\n“我拍过门。没人开。”\n灵感+2。"); } },
+    { label:"不看", run:()=>{ addLogEvent("你走了。\n墙上的字变淡了。"); } },
+    { label:"刻上自己的名字", run:()=>{ gainInspiration(1); S.paper += 15; addLogEvent("你刻上自己的名字。\n墙上的字变了。\n下面多了一行：“你也是。”\n灵感+1，+15 纸钱。"); } },
+  ]},
+  { type:"story", title:"值班表", scene:"墙上贴着一张值班表。\n很旧。\n纸都黄了。\n最后一行写着：\n“今晚值班：无人生还。”", choices:[
+    { label:"撕下来", run:()=>{ gainInspiration(2); addLogEvent("你把值班表撕下来。\n背面写着一行小字：\n“别坐最后一排。”\n灵感+2。"); } },
+    { label:"不看", run:()=>{ addLogEvent("你走了。\n身后值班表掉了下来。\n你没有回头。"); } },
+  ]},
+  { type:"story", title:"照片", scene:"地上有一张照片。\n很旧。\n照片上是一群学生。\n站在宿舍楼前面。\n有一个人的脸被划掉了。", choices:[
+    { label:"看", run:()=>{ gainInspiration(2); addLogEvent("你看了很久。\n被划掉的那个人站在最边上。\n他很瘦。\n灵感+2。"); } },
+    { label:"不看", run:()=>{ addLogEvent("你把照片放回去了。\n你没有看。"); } },
+  ]},
+  { type:"story", title:"日记本", scene:"地上有一本日记本。\n翻开着。\n最后一页写着：\n“我忍了两年。”\n“我忍不了了。”", choices:[
+    { label:"翻前面", run:()=>{ gainInspiration(3); addLogEvent("你翻了前面。\n每一页都写着同样的事。\n“今天他们又来了。”\n“今天我又忍了。”\n灵感+3。"); } },
+    { label:"合上", run:()=>{ addLogEvent("你合上日记。\n你不想再看了。"); } },
+  ]},
+  { type:"story", title:"校服", scene:"墙角挂着一件校服。\n很旧。\n胸口绣着一个名字。\n“林默。”", choices:[
+    { label:"拿走", run:()=>{ gainInspiration(2); S.paper += 10; addLogEvent("你拿走校服。\n口袋里有一张纸条：\n“有人听到吗？”\n灵感+2，+10 纸钱。"); } },
+    { label:"不拿", run:()=>{ addLogEvent("你没有碰它。\n你走了。"); } },
+  ]},
+  { type:"story", title:"最后一页", scene:"地上有一张纸。\n被撕下来的。\n上面只有一句话：\n“如果你能看到这行字，说明你已经在这里很久了。”", choices:[
+    { label:"读", run:()=>{ gainInspiration(3); S.hp -= 10; addLogEvent("你读完了。\n你忽然觉得头晕。\n灵感+3，-10 理智。"); } },
+    { label:"不看", run:()=>{ addLogEvent("你把纸放回去了。\n你不想知道。"); } },
+  ]},
+  { type:"special", title:"锁着的门", scene:"走廊尽头有一扇门。\n锁着。\n锁上落着灰。\n但你知道里面有什么。", choices:[
+    { label:"用旧钥匙打开", if:()=>hasEquip("old_key"), run:()=>{ const e = randomEquip(); if (e) { if (S.equips.length >= MAX_EQUIPS) { showReplaceEquipWithCallback(e, () => { addLogEvent(`你用旧钥匙打开了门。\n里面有一个装备：「${e.name}」。`); showEventResult(); }); return; } addEquip(e); addLogEvent(`你用旧钥匙打开了门。\n里面有一个装备：「${e.name}」。`); } else addLogEvent("你打开了门。\n里面是空的。"); } },
+    { label:"踹开", run:()=>{ if (Math.random() < 0.5) { const e = randomEquip(); if (e) { if (S.equips.length >= MAX_EQUIPS) { showReplaceEquipWithCallback(e, () => { addLogEvent(`你踹开了门。\n里面有一个装备：「${e.name}」。`); showEventResult(); }); return; } addEquip(e); addLogEvent(`你踹开了门。\n里面有一个装备：「${e.name}」。`); } } else { S.hp -= 20; addLogEvent("你踹不开。\n你的脚很疼。\n-20 理智。"); } } },
+    { label:"离开", run:()=>{ addLogEvent("你走了。\n门后传来声音。\n你没有听清。"); } },
+  ]},
+  { type:"special", title:"镜子里的你", scene:"镜子里的你在看你。\n它和你一样。\n但它手里有东西。\n你没有。", choices:[
+    { label:"伸手", run:()=>{ if (Math.random() < 0.4) { S.paper += 30; addLogEvent("你伸出手。\n镜子里的你把东西递给你。\n是一叠纸钱。\n+30 纸钱。"); } else { S.hp -= 15; addLogEvent("你伸出手。\n镜子里的你抓住了你。\n-15 理智。"); } } },
+    { label:"砸碎镜子", if:()=>S.equips.length>0, run:()=>{ gainInspiration(2); S.hp -= 10; addLogEvent("你砸碎镜子。\n碎片里全是眼睛。\n灵感+2，-10 理智。"); } },
+    { label:"离开", run:()=>{ addLogEvent("你走了。\n镜子里的人在看你。\n你没有回头。"); } },
+  ]},
+  { type:"special", title:"祭坛上的照片", scene:"祭坛上有一张照片。\n照片上的人看不清脸。\n但你认出了那件校服。\n是林默。", choices:[
+    { label:"点蜡烛", if:()=>S.paper>=10, run:()=>{ S.paper -= 10; gainInspiration(3); addLogEvent("你点燃蜡烛。\n照片上的人笑了。\n灵感+3。"); } },
+    { label:"拿走照片", run:()=>{ if (Math.random() < 0.5) { gainInspiration(3); addLogEvent("你拿走照片。\n照片上的人看着你。\n灵感+3。"); } else { S.hp -= 20; addLogEvent("你拿走照片。\n照片上的人动了。\n-20 理智。"); } } },
+    { label:"离开", run:()=>{ addLogEvent("你走了。\n身后蜡烛灭了。"); } },
+  ]},
+  { type:"special", title:"店主的账本", scene:"地上有一本账本。\n翻开。\n上面记着很多名字。\n你的名字也在上面。", choices:[
+    { label:"看自己的名字", run:()=>{ gainInspiration(2); S.hp -= 10; addLogEvent("你看见自己的名字。\n后面写着：“还活着。”\n灵感+2，-10 理智。"); } },
+    { label:"撕掉自己那页", run:()=>{ S.hp -= 15; S.paper += 20; addLogEvent("你撕掉自己那页。\n账本在流血。\n-15 理智，+20 纸钱。"); } },
+    { label:"合上", run:()=>{ addLogEvent("你合上账本。\n你不想再看了。"); } },
+  ]},
+  { type:"special", title:"纸人", scene:"地上有一个纸人。\n很小。\n做得像你。\n它站着。\n它在看你。", choices:[
+    { label:"拿走", run:()=>{ gainInspiration(2); addLogEvent("你拿走纸人。\n纸人很轻。\n但它一直在看你。\n灵感+2。"); } },
+    { label:"烧掉", run:()=>{ S.paper += 25; addLogEvent("你烧掉纸人。\n火是蓝的。\n纸人没有挣扎。\n+25 纸钱。"); } },
+    { label:"离开", run:()=>{ addLogEvent("你走了。\n身后纸人倒了。"); } },
+  ]},
+  { type:"special", title:"最后一封信", scene:"墙上贴着一封信。\n没有收件人。\n字迹很潦草。\n“如果你能看到这封信……”\n后面被撕掉了。", choices:[
+    { label:"撕下来", run:()=>{ gainInspiration(3); addLogEvent("你撕下信。\n背面写着：\n“别停下。”\n灵感+3。"); } },
+    { label:"不撕", run:()=>{ addLogEvent("你走了。\n信在墙上晃了晃。"); } },
+  ]},
+];
+
+/* ============ DOM 与工具 ============ */
+const $ = id => document.getElementById(id);
+const content = $("content"), actionbar = $("actionbar"), topbar = $("topbar");
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._tid); t._tid = setTimeout(()=>t.classList.remove("show"), 1500); }
+function rnd(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function shuffle(arr) { const a = [...arr]; for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function randomSkill() { return rnd(getAvailableSkills()); }
+function randomEquip() { return rnd(EQUIPS.filter(e=>!e.exclusive)); }
+function hasEquip(id) { return S.equips.some(e=>e.id===id); }
+function hasTalent(id) { return S.talents.some(t=>t.id===id); }
+
+/* ============ 天赋抽取（品质概率：普通60% 高级32% 传说8%） ============ */
+function pickRandomTalents() {
+  const common = shuffle(TALENTS.filter(t => t.quality === "common"));
+  const rare = shuffle(TALENTS.filter(t => t.quality === "rare"));
+  const legend = shuffle(TALENTS.filter(t => t.quality === "legend"));
+  const picks = [];
+  while (picks.length < 8) {
+    const r = Math.random();
+    let pick;
+    if (r < 0.60 && common.length) pick = common.shift();
+    else if (r < 0.92 && rare.length) pick = rare.shift();
+    else if (legend.length) pick = legend.shift();
+    else if (common.length) pick = common.shift();
+    else if (rare.length) pick = rare.shift();
+    if (pick) picks.push(pick); else break;
+  }
+  while (picks.length < 8) {
+    const remaining = TALENTS.filter(t => !picks.includes(t));
+    if (!remaining.length) break;
+    picks.push(rnd(remaining));
+  }
+  return picks.slice(0, 6);
+}
+
+function showAd(cb, d) { d = d || 3; const o = $("ad-overlay"), c = $("ad-count"); o.classList.add("show"); let l = d; c.textContent = l; const t = setInterval(() => { l--; c.textContent = l; if (l <= 0) { clearInterval(t); o.classList.remove("show"); cb(); } }, 1000); }
+function floatText(text, color, isCrit) { const el = document.createElement("div"); el.className = "float-text " + (color || "normal") + (isCrit ? " crit" : ""); el.textContent = text; el.style.left = (Math.random()*40+30)+"%"; el.style.top = (Math.random()*20+35)+"%"; document.body.appendChild(el); setTimeout(() => el.remove(), 800); }
+function screenShake() { const a = $("app"); a.classList.add("shake"); setTimeout(() => a.classList.remove("shake"), 300); }
+function critFlash() { const e = $("crit-flash"); e.classList.add("active"); setTimeout(() => e.classList.remove("active"), 300); sfx("crit"); }
+
+function addEquip(e) {
+  if (S.equips.length >= MAX_EQUIPS) { showReplaceEquip(e); return false; }
+  S.equips.push(e);
+  if (e.id === "stone_heart") { S.maxHP += 20; S.hp += 20; }
+  if (e.id === "mirror") gainInspiration(1);
+  updateTopbar();
+  return true;
+}
+function addSkillToSlot(s) {
+  const emptyIdx = S.skills.indexOf(null);
+  const inst = cloneSkill(s, s.enhance || 0);
+  if (emptyIdx >= 0) { S.skills[emptyIdx] = inst; return; }
+  const worstIdx = S.skills.findIndex(x => x && x.rarity === "common");
+  if (worstIdx >= 0) S.skills[worstIdx] = inst;
+  else {
+    // 没有普通可替时不强制覆盖
+  }
+}
+function updateTopbar() {
+  if (S.battle) {
+    $("ghost-hp-wrap").style.display = "";
+    $("ghost-hp-row").style.display = "";
+    const pct = Math.max(0, Math.min(100, (S.battle.ghostHP / Math.max(1, S.battle.ghostMaxHP)) * 100));
+    $("ghost-hp-bar").style.width = pct + "%";
+    $("ghost-hp-text").textContent = Math.max(0, Math.floor(S.battle.ghostHP)) + "/" + S.battle.ghostMaxHP;
+  } else {
+    $("ghost-hp-wrap").style.display = "none";
+    $("ghost-hp-row").style.display = "none";
+  }
+  $("floor-label").textContent = S.floor + "楼";
+  $("step-label").textContent = S.step < 3 ? "第" + (S.step+1) + "步" : "尽头";
+  const lvEl = $("lv-label");
+  if (lvEl) lvEl.textContent = "Lv." + S.level;
+  const pathEl = $("path-label");
+  if (pathEl) {
+    if (S.path && PATHS[S.path]) {
+      pathEl.style.display = "";
+      pathEl.className = "path-tag " + S.path;
+      pathEl.textContent = PATHS[S.path].name;
+    } else { pathEl.style.display = "none"; }
+  }
+  const inspEl = $("insp-label");
+  if (inspEl) inspEl.textContent = S.inspiration;
+  const paperEl = $("paper-label");
+  if (paperEl) paperEl.textContent = S.paper;
+  $("hp-bar").style.width = Math.max(0, S.hp / S.maxHP * 100) + "%";
+  $("hp-text").textContent = Math.max(0, Math.floor(S.hp)) + "/" + S.maxHP;
+  if (S.hp <= 50) maybeShowGarbleHint();
+  const expEl = $("exp-text");
+  if (expEl) expEl.textContent = S.exp + "/" + S.expToNext;
+  const expBar = $("exp-bar");
+  if (expBar) expBar.style.width = Math.min(100, (S.exp / Math.max(1, S.expToNext)) * 100) + "%";
+  const badges = $("badges");
+  badges.innerHTML = "";
+  S.equips.forEach(e => { const span = document.createElement("span"); span.className = "badge equip"; span.textContent = e.name; badges.appendChild(span); });
+  S.talents.forEach(t => { const span = document.createElement("span"); span.className = "badge talent"; span.textContent = t.name; badges.appendChild(span); });
+  S.bossSpecials.forEach(id => {
+    const sp = Object.values(BOSS_SPECIALS).find(x => x.id === id);
+    if (sp) { const span = document.createElement("span"); span.className = "badge equip"; span.style.borderColor = "#5a2020"; span.style.color = "#c8a0a0"; span.textContent = sp.name; badges.appendChild(span); }
+  });
+  // Low sanity vignette
+  const vig = $("vignette");
+  if (vig) {
+    if (S.hp <= 30) vig.classList.add("active");
+    else vig.classList.remove("active");
+  }
+}
+function gainInspiration(n) {
+  const before = S.inspiration;
+  S.inspiration += n;
+  updateTopbar();
+  // Narrative milestones – make the resource feel like “seeing more”
+  if (before < 1 && S.inspiration >= 1) toast("你开始听见楼里细小的声音。");
+  else if (before < 3 && S.inspiration >= 3) toast("你能看清它们打算做什么了。");
+  else if (before < 5 && S.inspiration >= 5) toast("暗处有东西。只有你看得到。");
+  else if (before < 7 && S.inspiration >= 7) toast("整栋楼对你几乎没有秘密了。");
+}
+function getGhostReveal() {
+  const i = S.inspiration;
+  let r;
+  if (i >= 5) r = { intent:true, skills:true, weakness:true };
+  else if (i >= 3) r = { intent:true, skills:true, weakness:false };
+  else if (i >= 1) r = { intent:true, skills:false, weakness:false };
+  else r = { intent:false, skills:false, weakness:false };
+  if (hasPathPassive(6) && S.path === "tongling") r.intent = true;
+  if (S.battle && S.battle._forceIntent) r.intent = true;
+  if (S.battle && S.battle._fullReveal) { r.intent = true; r.skills = true; r.weakness = true; }
+  return r;
+}
+function getCritRate() {
+  let base = 0;
+  const i = S.inspiration;
+  if (i >= 6) base = 0.30;
+  else if (i >= 4) base = 0.20;
+  else if (i >= 2) base = 0.10;
+  if (hasEquip("cat_eye")) base += 0.10;
+  if (hasPathPassive(6) && S.path === "powang") base += 0.10;
+  return Math.min(base, 0.50);
+}
+/* ============ 安全屋 ============ */
+function showSafeRoom(callback) {
+  S.phase = "safeRoom"; topbar.style.display = "none";
+  const intro = SAFE_ROOM_INTRO[S.floor] || "你找到一个安全的地方。\n坐下来。";
+  content.innerHTML = `<div class="safe-room"><div class="title">安 全 屋</div><div class="text">${garbleText(intro)}</div></div><div class="btn-row" id="safe-choices"></div>`;
+  const box = $("safe-choices");
+  const heal = Math.floor(S.maxHP * 0.32);
+  const c1 = document.createElement("button");
+  c1.className = "btn"; c1.textContent = `休息（恢复 ${heal} 理智）`;
+  c1.onclick = () => { S.hp = Math.min(S.maxHP, S.hp + heal); updateTopbar(); content.innerHTML = `<div class="safe-room"><div class="text" style="color:#8a6aaa;">你休息了一会儿。\n你感觉好多了。</div></div>`; actionbar.innerHTML = ""; const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "离 开 安 全 屋"; b.onclick = callback; actionbar.appendChild(b); };
+  box.appendChild(c1);
+  const c2 = document.createElement("button");
+  c2.className = "btn"; c2.textContent = "静思（灵感 +2）";
+  c2.onclick = () => { let g = 2; if (hasTalent("t_memo")) g += 1; gainInspiration(g); content.innerHTML = `<div class="safe-room"><div class="text" style="color:#8a6aaa;">你想了一会儿。\n你想起了什么。\n灵感+${g}。</div></div>`; actionbar.innerHTML = ""; const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "离 开 安 全 屋"; b.onclick = callback; actionbar.appendChild(b); };
+  box.appendChild(c2);
+  const c3 = document.createElement("button");
+  c3.className = "btn"; c3.textContent = "换一张技能牌";
+  c3.onclick = () => showSafeRoomReplace(callback);
+  box.appendChild(c3);
+  const nextFloor = (() => {
+    const idx = FLOOR_ORDER.indexOf(S.floor);
+    return idx >= 0 && idx < FLOOR_ORDER.length - 1 ? FLOOR_ORDER[idx + 1] : null;
+  })();
+  // 打听下一层（实际是本层已过，callback 会进下一层）——情报针对即将面对的楼层 BOSS
+  if (nextFloor) {
+    const cRumor = document.createElement("button");
+    cRumor.className = "btn";
+    const cost = 15;
+    cRumor.textContent = `打听下层（${cost} 纸钱）`;
+    cRumor.onclick = () => {
+      if (S.paper < cost) { toast("纸钱不够"); return; }
+      S.paper -= cost;
+      updateTopbar();
+      const boss = BOSS_POOL[nextFloor];
+      const weak = boss ? boss.weakness : "……";
+      const name = boss ? boss.name : "未知";
+      content.innerHTML = `<div class="safe-room"><div class="title">传 闻</div><div class="text" style="text-align:left;padding:0 8px;">${garbleText("有人在墙上用指甲刻过字。\n\n「下一层……」\n「名字像是：" + name + "」\n\n「弱点：" + weak + "」\n\n字迹到这里断了。")}</div></div>`;
+      actionbar.innerHTML = "";
+      const b = document.createElement("button");
+      b.className = "btn primary";
+      b.textContent = "离 开 安 全 屋";
+      b.onclick = callback;
+      actionbar.appendChild(b);
+    };
+    box.appendChild(cRumor);
+  }
+  const c4 = document.createElement("button");
+  c4.className = "btn ghost"; c4.textContent = "直接离开"; c4.onclick = callback;
+  box.appendChild(c4);
+  actionbar.innerHTML = "";
+}
+function showSafeRoomReplace(callback) {
+  const options = shuffle(getAvailableSkills()).slice(0, 3);
+  content.innerHTML = `<div class="safe-room"><div class="title">换 牌</div><div class="text">选一张新牌。\n然后选一张丢掉。</div></div><div class="reward-list" id="safe-new"></div>`;
+  const list = $("safe-new");
+  options.forEach(s => {
+    const d = document.createElement("div");
+    d.className = "reward-card rarity-" + s.rarity;
+    const rn = {common:"普通", rare:"高级", legend:"传说"}[s.rarity];
+    d.innerHTML = `<div class="name">${s.name} <span style="color:#6a6a78;font-size:11px;">${rn}</span></div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合</div><div class="desc">${s.desc}</div><div class="flavor">${s.flavor}</div>`;
+    d.onclick = () => {
+      content.innerHTML = `<div class="safe-room"><div class="title">丢 哪 张</div><div class="text">你获得了「${s.name}」。\n选一张丢掉。</div></div><div class="reward-list" id="safe-old"></div>`;
+      const oldList = $("safe-old");
+      S.skills.forEach((old, i) => {
+        if (!old) return;
+        const od = document.createElement("div");
+        od.className = "reward-card rarity-" + old.rarity;
+        od.innerHTML = `<div class="name">${old.name}</div><div class="cost-line">消耗 ${old.cost} 专注 · 冷却 ${old.cd} 回合</div><div class="desc">${old.desc}</div>`;
+        od.onclick = () => { S.skills[i] = s; callback(); };
+        oldList.appendChild(od);
+      });
+      actionbar.innerHTML = "";
+      const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "算了"; back.onclick = () => showSafeRoom(callback); actionbar.appendChild(back);
+    };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "返回"; back.onclick = () => showSafeRoom(callback); actionbar.appendChild(back);
+}
+
+function showReplaceSkillFromEvent(newSkill, callback) {
+  content.innerHTML = `<div class="reward-title">替换一个技能</div><div class="map-sub">选择替换为「${newSkill.name}」</div><div class="reward-list" id="replace-list"></div>`;
+  const list = $("replace-list");
+  S.skills.forEach((s, i) => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + s.rarity;
+    d.innerHTML = `<div class="name">${s.name}</div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合</div><div class="desc">${s.desc}</div>`;
+    d.onclick = () => { S.skills[i] = newSkill; callback(); };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "跳过"; back.onclick = callback; actionbar.appendChild(back);
+}
+
+/* ============ 序章 ============ */
+function showPrologue() {
+  S.phase = "prologue"; topbar.style.display = "none"; actionbar.innerHTML = "";
+  const lines = [
+    { text:"你叫周然。\n大三。住6楼，607。", cls:sanityClass() },
+    { text:"你是个普通人。\n成绩一般。朋友不多。\n平时不太说话。", cls:sanityClass() },
+    { text:"你搬进这栋楼的时候，\n上一任住户刚搬走。\n宿管没告诉你他为什么走。", cls:"story-text dim" },
+    { text:"你爷爷给了你一块玉佩。\n他说能保平安。\n你一直放在抽屉里。", cls:"story-text dim" },
+    { text:"你妈给你系过一根红绳。\n她说能挡一次灾。\n后来断了。", cls:"story-text dim" },
+    { text:"今晚十一点。\n你坐在床上。\n宿舍里只有你一个人。", cls:sanityClass() },
+    { text:"灯突然灭了。", cls:"story-text warn" },
+    { text:"不是跳闸。走廊里的应急灯也没亮。", cls:"story-text dim" },
+    { text:"你摸出手机。屏幕是黑的。没信号。", cls:"story-text dim" },
+    { text:"你站起来。你摸黑走到门口。", cls:sanityClass() },
+    { text:"你握住门把手。准备开门。", cls:sanityClass() },
+    { text:"手心是湿的。", cls:"story-text dim" },
+    { text:"然后——", cls:"story-text warn" },
+    { text:"门外传来了敲门声。", cls:"story-text warn" },
+    { text:"一下。两下。三下。", cls:"story-text warn" },
+    { text:"很规律。像是有人用指节在敲。\n敲在607的门上。", cls:"story-text warn" },
+    { text:"你没有应。", cls:"story-text dim" },
+    { text:"但你听见——门轴动了。", cls:"story-text warn" },
+    { text:"门开了。", cls:"story-text warn" },
+    { text:"不是你开的。门自己开了。", cls:"story-text warn" },
+    { text:"走廊里很黑。你什么都看不清。\n只有风。从楼道深处吹过来。", cls:"story-text dim" },
+    { text:"你只知道一件事——", cls:"story-text warn" },
+    { text:"你得出去。", cls:"story-text warn" },
+  ];
+  playStoryLines(lines, () => showLeaveRoom(), { interval: 700, btnLabel: "走 出 去" });
+}
+function showLeaveRoom() {
+  S.phase = "leaveRoom";
+  topbar.style.display = "none";
+  actionbar.innerHTML = "";
+  const lines = [
+    "你拧开门把手。",
+    "门轴响了一声。\n很轻。像是有人在隔壁应了一声。",
+    "走廊里没有灯。\n应急灯也是黑的。",
+    "你站在门口。\n宿舍里还留着你的气味。\n你没有回头。",
+    "你迈出了第一步。",
+  ];
+  playStoryLines(lines, () => {
+    S.step = 0;
+    const intro = FLOOR_INTRO[6];
+    if (intro) showFloorIntro(intro, () => renderMap());
+    else renderMap();
+  }, { interval: 850, btnLabel: "沿走廊走" });
+}
+function showPaperDrop() {
+  S.phase = "paperDrop"; topbar.style.display = ""; updateTopbar();
+  content.innerHTML = `<div style="text-align:center;padding:20px;"><div style="font-size:48px;margin-bottom:16px;">💵</div><div style="color:#8a8a98;font-size:14px;line-height:2;margin-bottom:24px;">你低头。\n脚边有一叠纸钱。\n像是有人烧过的。还带着灰。\n纸上印着「天地银行」。\n\n在这栋楼里，活人用钱。\n死人用纸钱。\n你还不确定自己算哪边。</div></div><div class="btn-row" id="paper-choices"></div>`;
+  const box = $("paper-choices");
+  const c1 = document.createElement("button"); c1.className = "btn"; c1.textContent = "捡起来";
+  c1.onclick = () => { S.hasPaper = true; S.paper += 30; updateTopbar(); toast("纸钱在这栋楼里能换东西。"); renderMap(); };
+  box.appendChild(c1);
+  const c2 = document.createElement("button"); c2.className = "btn ghost"; c2.textContent = "不要碰";
+  c2.onclick = () => { S.refusedPaper = true; toast("你没碰。有些东西记得你拒绝过。"); renderMap(); };
+  box.appendChild(c2);
+  actionbar.innerHTML = "";
+}
+
+/* ============ 地图 ============ */
+function nodePoolForStep(step) {
+  if (step === 0) return ["battle","battle","event","treasure"];
+  if (step === 1) return ["battle","elite","event","rest","treasure","shop"];
+  if (step === 2) return ["battle","elite","event","rest","treasure","shop"];
+  return ["boss"];
+}
+function generateMapOptions() {
+  // 每层最后一步：强制 BOSS，不掺其他节点
+  if (S.step >= S.maxStep) {
+    S.mapOptions = ["boss"];
+    S.mapKey = S.floor + "_" + S.step;
+    return;
+  }
+  let pool = nodePoolForStep(S.step);
+  if (S.shopGone) pool = pool.filter(p => p !== "shop");
+  const uniq = [...new Set(pool)];
+  const picks = [];
+  while (picks.length < 3 && uniq.length) { const p = uniq.splice(Math.floor(Math.random()*uniq.length),1)[0]; picks.push(p); }
+  while (picks.length < 3) picks.push("battle");
+  if (S.inspiration >= 5 && Math.random() < (S.inspiration >= 6 ? 0.7 : 0.4)) picks.push("hidden");
+  S.mapOptions = picks;
+  S.mapKey = S.floor + "_" + S.step;
+}
+/** 仅在楼层/步数变化时重新生成；从子页面返回不刷新 */
+function ensureMapOptions() {
+  const key = S.floor + "_" + S.step;
+  if (S.mapKey === key && S.mapOptions && S.mapOptions.length) return;
+  generateMapOptions();
+}
+function getNodeInfo(type) {
+  if (type === "battle") return { icon:"⚔", name:"战斗", desc:"走廊里有东西在等", cls:"normal" };
+  if (type === "elite") return { icon:"👹", name:"精英", desc:"它比普通的更清醒", cls:"elite" };
+  if (type === "event") return { icon:"❓", name:"事件", desc:"你不知道前面是什么" };
+  if (type === "rest") return { icon:"🔥", name:"休息", desc:"有人留了灯，暂时安全" };
+  if (type === "treasure") return { icon:"💎", name:"宝箱", desc:"前人留下的东西" };
+  if (type === "hidden") return { icon:"🌑", name:"暗处", desc:"灵感让你看见了别人看不见的", cls:"hidden" };
+  if (type === "shop") {
+    if (S.shopGone) return { icon:"🚪", name:"空铺", desc:"店主走了，铺子也空了", cls:"empty", disabled:true };
+    if (S.refusedPaper) return { icon:"👺", name:"纸钱铺 · 挑战", desc:"它记得你拒绝过", cls:"shop-challenge" };
+    return { icon:"🏮", name:"纸钱铺", desc:"死人的货币，换活人的东西", cls:"shop" };
+  }
+  if (type === "boss") {
+    if (S.floor === 1) return { icon:"🚪", name:"出口", desc:"门外有光。门前有东西。没有退路。", cls:"elite" };
+    return { icon:"🚪", name:"尽头", desc:"这层楼的尽头。必须过去。", cls:"elite" };
+  }
+  return { icon:"?", name:"未知", desc:"" };
+}
+function renderMap() {
+  S.phase = "map"; topbar.style.display = ""; updateTopbar(); ensureMapOptions();
+  const title = S.step < 3 ? `第 ${S.step+1} 步` : "尽头";
+  let dots = "";
+  for (let i = 0; i < 4; i++) {
+    const cls = i < S.step ? "done" : (i === S.step ? "now" : "");
+    const boss = i === 3 ? " boss" : "";
+    dots += `<div class="map-dot ${cls}${boss}"></div>`;
+  }
+  const pathLine = S.path && PATHS[S.path] ? `<div class="map-sub" style="margin-bottom:8px;color:${PATHS[S.path].color};">${PATHS[S.path].name}之路</div>` : "";
+  content.innerHTML = `<div class="map-title">${S.floor}楼 · ${FLOOR_NAMES[S.floor]}</div>${pathLine}<div class="map-progress">${dots}</div><div class="map-sub">${title} · 选择你的道路</div><div class="node-list" id="node-list"></div>`;
+  const list = $("node-list");
+  S.mapOptions.forEach(type => {
+    const info = getNodeInfo(type);
+    const card = document.createElement("div");
+    card.className = "node-card" + (info.cls ? " " + info.cls : "") + (info.disabled ? " disabled" : "");
+    card.innerHTML = `<div class="node-icon">${info.icon}</div><div class="node-info"><div class="name">${info.name}</div><div class="desc">${info.desc}</div></div>`;
+    if (!info.disabled) card.onclick = () => enterNode(type);
+    list.appendChild(card);
+  });
+  // 尽头强制 BOSS：文案提示
+  if (S.step >= S.maxStep) {
+    const hint = document.createElement("div");
+    hint.className = "map-sub";
+    hint.style.marginTop = "12px";
+    hint.textContent = S.floor === 1 ? "没有别的路了。出去，或者留下。" : "这是本层唯一的路。退不回去。";
+    list.parentNode.appendChild(hint);
+  }
+  actionbar.innerHTML = "";
+  const btn1 = document.createElement("button"); btn1.className = "btn ghost"; btn1.textContent = "技能栏"; btn1.onclick = () => { sfx("click"); showSkills(); }; actionbar.appendChild(btn1);
+  const btn2 = document.createElement("button"); btn2.className = "btn ghost"; btn2.textContent = "装备栏"; btn2.onclick = () => { sfx("click"); showEquips(); }; actionbar.appendChild(btn2);
+  // 特殊跳关：仅持有「骨钥匙」且非 1 楼出口时，可付代价走侧门（仍有失败风险）
+  if (S.step >= S.maxStep && S.floor !== 1 && hasEquip("bone_key") && !S.sideDoorUsed) {
+    const btnSkip = document.createElement("button");
+    btnSkip.className = "btn ghost";
+    btnSkip.style.color = "#9a6ac8";
+    btnSkip.textContent = "用骨钥匙开侧门（-20 理智，有风险）";
+    btnSkip.onclick = () => tryBossSideDoor();
+    actionbar.appendChild(btnSkip);
+  }
+  const btnAbandon = document.createElement("button"); btnAbandon.className = "btn ghost"; btnAbandon.textContent = "放弃本局"; btnAbandon.style.color = "#5a3a3a";
+  btnAbandon.onclick = () => {
+    if (confirm("确定放弃本局？进度将丢失。")) {
+      clearRun();
+      sfx("lose");
+      titleScreen();
+    }
+  };
+  actionbar.appendChild(btnAbandon);
+  saveRun();
+}
+function tryBossSideDoor() {
+  if (!hasEquip("bone_key") || S.floor === 1) return;
+  content.innerHTML = `<div class="reward-title">侧 门</div><div class="event-scene">${garbleText("骨钥匙插进锁孔。\n锁转了。\n门后不是楼梯。\n是一条更窄的缝。\n你不知道它通到哪。")}</div>`;
+  actionbar.innerHTML = "";
+  const go = document.createElement("button"); go.className = "btn danger"; go.textContent = "挤进去（-20 理智）";
+  go.onclick = () => {
+    S.hp -= 20;
+    S.sideDoorUsed = true;
+    updateTopbar();
+    if (S.hp <= 0) { S.hp = 0; onBattleLose(); return; }
+    // 70% 成功跳过本层 BOSS，30% 被拖进更狠的遭遇
+    if (Math.random() < 0.7) {
+      content.innerHTML = `<div class="event-scene">${garbleText("你挤了过去。\n身后锁自己合上了。\n楼梯就在前面。\n你没有回头。")}</div>`;
+      actionbar.innerHTML = "";
+      const b = document.createElement("button"); b.className = "btn primary"; b.textContent = "下楼";
+      b.onclick = () => {
+        // 视为本层结束，进入安全屋流程
+        S.step = S.maxStep + 1;
+        nextStep();
+      };
+      actionbar.appendChild(b);
+    } else {
+      content.innerHTML = `<div class="event-scene">${garbleText("缝里有手。\n它抓住了你。\n把你拖回了尽头。\n钥匙断了。")}</div>`;
+      // 移除骨钥匙
+      S.equips = S.equips.filter(e => e.id !== "bone_key");
+      updateTopbar();
+      actionbar.innerHTML = "";
+      const b = document.createElement("button"); b.className = "btn danger"; b.textContent = "面对它";
+      b.onclick = () => startBattle("boss");
+      actionbar.appendChild(b);
+    }
+  };
+  actionbar.appendChild(go);
+  const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "还是走正门";
+  back.onclick = () => renderMap();
+  actionbar.appendChild(back);
+}
+function showSkills() {
+  S.phase = "skills";
+  content.innerHTML = `<div class="map-title">技 能 栏</div><div class="map-sub">你脑子里能同时抓住的动作。最多五个。</div><div class="reward-list" id="skill-list"></div>`;
+  const list = $("skill-list");
+  S.skills.forEach((s) => {
+    const d = document.createElement("div");
+    d.className = "reward-card" + (s ? " rarity-" + s.rarity : "");
+    if (s) { const rn = {common:"普通", rare:"高级", legend:"传说"}[s.rarity]; d.innerHTML = `<div class="name">${s.name} <span style="color:#6a6a78;font-size:11px;">${rn}</span></div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合</div><div class="desc">${s.desc}</div><div class="flavor">${s.flavor}</div>`; }
+    else d.innerHTML = `<div class="name" style="color:#4a4a58;">空 栏</div><div class="desc">未装备技能</div>`;
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "返回"; btn.onclick = renderMap; actionbar.appendChild(btn);
+}
+function showEquips() {
+  S.phase = "equips";
+  content.innerHTML = `<div class="map-title">装 备 栏</div><div class="map-sub">你身上能带着的东西。最多 ${MAX_EQUIPS} 件。</div><div class="reward-list" id="equip-list"></div>`;
+  const list = $("equip-list");
+  for (let i = 0; i < MAX_EQUIPS; i++) {
+    const e = S.equips[i];
+    const d = document.createElement("div");
+    d.className = "reward-card" + (e ? " rarity-" + e.rarity : "");
+    if (e) d.innerHTML = `<div class="name">${e.name}</div><div class="desc">${e.desc}</div><div class="flavor">${e.flavor||""}</div>`;
+    else d.innerHTML = `<div class="name" style="color:#4a4a58;">空 栏</div><div class="desc">未装备</div>`;
+    list.appendChild(d);
+  }
+  actionbar.innerHTML = ""; const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "返回"; btn.onclick = renderMap; actionbar.appendChild(btn);
+}
+function enterNode(type) {
+  if (type === "battle") showBattleSelect(false);
+  else if (type === "elite") showBattleSelect(true);
+  else if (type === "boss") startBattle("boss");
+  else if (type === "event") startEvent();
+  else if (type === "rest") startRest();
+  else if (type === "treasure") startTreasure();
+  else if (type === "shop") startShop();
+  else if (type === "hidden") startHidden();
+}
+function showBattleSelect(forceElite) {
+  S.phase = "battleSelect"; topbar.style.display = ""; updateTopbar();
+  content.innerHTML = `<div class="choice-title">选择难度</div><div class="map-sub" style="margin-bottom:20px;">你要面对什么</div><div class="node-list" id="battle-choices"></div>`;
+  const list = $("battle-choices");
+  if (!forceElite) {
+    const n = document.createElement("div"); n.className = "node-card normal";
+    n.innerHTML = `<div class="node-icon">⚔</div><div class="node-info"><div class="name">普通</div><div class="desc">它还不太清醒</div><div class="risk">奖励：纸钱 · 经验</div></div>`;
+    n.onclick = () => startBattle("normal"); list.appendChild(n);
+  }
+  const e = document.createElement("div"); e.className = "node-card elite";
+  e.innerHTML = `<div class="node-icon">👹</div><div class="node-info"><div class="name">精英</div><div class="desc">它记得自己是谁</div><div class="reward">奖励：纸钱 · 更多经验 · 装备</div></div>`;
+  e.onclick = () => startBattle("elite"); list.appendChild(e);
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "返回"; back.onclick = renderMap; actionbar.appendChild(back);
+}
+function startHidden() {
+  S.phase = "hiddenSelect"; topbar.style.display = ""; updateTopbar();
+  content.innerHTML = `<div class="choice-title">暗处</div><div class="map-sub" style="margin-bottom:20px;">你看到了别人看不到的东西</div><div class="node-list" id="hidden-choices"></div>`;
+  const list = $("hidden-choices");
+  const battle = document.createElement("div"); battle.className = "node-card hidden";
+  battle.innerHTML = `<div class="node-icon">👁</div><div class="node-info"><div class="name">隐藏战斗</div><div class="desc">只有你能看到的东西</div><div class="reward">奖励：大量纸钱 · 经验 · 可能窥见传说技能</div></div>`;
+  battle.onclick = () => startBattle("hidden"); list.appendChild(battle);
+  const event = document.createElement("div"); event.className = "node-card normal";
+  event.innerHTML = `<div class="node-icon">📜</div><div class="node-info"><div class="name">隐藏事件</div><div class="desc">你看到了不该看的东西</div><div class="reward">奖励：灵感 · 纸钱 · 传说技能</div></div>`;
+  event.onclick = () => startHiddenEvent(); list.appendChild(event);
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "返回"; back.onclick = renderMap; actionbar.appendChild(back);
+}
+function startHiddenEvent() {
+  S.phase = "hiddenEvent";
+  const ev = rnd(HIDDEN_EVENTS);
+  content.innerHTML = `<div class="reward-title">${ev.title}</div><div class="event-scene">${garbleText(ev.scene)}</div><div class="btn-row" id="hidden-choices"></div>`;
+  const box = $("hidden-choices");
+  ev.choices.forEach(c => {
+    const btn = document.createElement("button"); btn.className = "btn"; btn.textContent = c.label;
+    btn.onclick = () => { c.run(); if (S.hp <= 0) { S.hp = 0; onBattleLose(); return; } showEventResult(); };
+    box.appendChild(btn);
+  });
+  actionbar.innerHTML = "";
+}
+
+/* ============ 商店 ============ */
+function startShop() { if (S.shopGone) { renderMap(); return; } if (S.refusedPaper) showShopChallenge(); else showShop(); }
+function showShop() {
+  S.phase = "shop";
+  // 技能只能靠升级获得；商店只卖装备与消耗
+  const items = pickWeightedEquips(4, "shop");
+  content.innerHTML = `<div class="map-title">纸钱铺</div><div class="map-sub">柜台后面没有人。\n桌上放着东西，像是专门留给你的。\n技能买不到——那是你从恐惧里学来的。\n这里只换死人留下的物件。</div><div class="reward-list" id="shop-list"></div>`;
+  const list = $("shop-list"); const bought = new Set();
+  items.forEach(item => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + item.rarity;
+    d.innerHTML = `<div class="name">${item.name}</div><div class="desc">${item.desc}</div><div class="flavor">${item.flavor||""}</div><div class="price">${item.price} 纸钱</div>`;
+    d.onclick = () => {
+      if (bought.has(item.id)) return;
+      if (S.paper < item.price) { toast("纸钱不够。"); return; }
+      if (S.equips.length >= MAX_EQUIPS) { showShopReplaceEquip(item, () => { S.paper -= item.price; bought.add(item.id); updateTopbar(); d.classList.add("bought"); }); return; }
+      S.paper -= item.price; bought.add(item.id); addEquip(item); updateTopbar(); d.classList.add("bought");
+    };
+    list.appendChild(d);
+  });
+  // 小消耗：直接买理智 / 灵感
+  const healPrice = 25;
+  const dHeal = document.createElement("div"); dHeal.className = "reward-card rarity-common";
+  dHeal.innerHTML = `<div class="name">温水</div><div class="desc">恢复 15 理智</div><div class="flavor">不知道谁烧的。还是热的。</div><div class="price">${healPrice} 纸钱</div>`;
+  dHeal.onclick = () => {
+    if (bought.has("shop_heal")) return;
+    if (S.paper < healPrice) { toast("纸钱不够。"); return; }
+    S.paper -= healPrice; bought.add("shop_heal");
+    S.hp = Math.min(S.maxHP, S.hp + 15); updateTopbar(); dHeal.classList.add("bought"); toast("+15 理智");
+  };
+  list.appendChild(dHeal);
+  const inspPrice = 35;
+  const dInsp = document.createElement("div"); dInsp.className = "reward-card rarity-rare";
+  dInsp.innerHTML = `<div class="name">旧照片</div><div class="desc">灵感 +1</div><div class="flavor">照片上的人看不清脸。</div><div class="price">${inspPrice} 纸钱</div>`;
+  dInsp.onclick = () => {
+    if (bought.has("shop_insp")) return;
+    if (S.paper < inspPrice) { toast("纸钱不够。"); return; }
+    S.paper -= inspPrice; bought.add("shop_insp");
+    gainInspiration(1); dInsp.classList.add("bought");
+  };
+  list.appendChild(dInsp);
+  actionbar.innerHTML = "";
+  if (S.adShopFloor !== S.floor) {
+    const btnAd = document.createElement("button"); btnAd.className = "btn"; btnAd.textContent = "看广告刷新商品（每层限1次）"; btnAd.onclick = () => { S.adShopFloor = S.floor; showAd(() => showShop(), 3); }; actionbar.appendChild(btnAd);
+  }
+  const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "离开"; btn.onclick = nextStep; actionbar.appendChild(btn);
+}
+function showShopReplaceEquip(newEquip, onConfirm) {
+  content.innerHTML = `<div class="reward-title">替换一件装备</div><div class="map-sub">选择替换为「${newEquip.name}」</div><div class="reward-list" id="replace-list"></div>`;
+  const list = $("replace-list");
+  S.equips.forEach((e, i) => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + e.rarity;
+    d.innerHTML = `<div class="name">${e.name}</div><div class="desc">${e.desc}</div>`;
+    d.onclick = () => {
+      if (e.id === "stone_heart") { S.maxHP -= 20; S.hp = Math.min(S.hp, S.maxHP); }
+      S.equips[i] = newEquip;
+      if (newEquip.id === "stone_heart") { S.maxHP += 20; S.hp += 20; }
+      if (newEquip.id === "mirror") gainInspiration(1);
+      onConfirm(); updateTopbar(); setTimeout(showShop, 100);
+    };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "返回"; back.onclick = showShop; actionbar.appendChild(back);
+}
+function showReplaceSkillInline(newSkill, onConfirm) {
+  content.innerHTML = `<div class="reward-title">替换一个技能</div><div class="map-sub">选择替换为「${newSkill.name}」</div><div class="reward-list" id="replace-list"></div>`;
+  const list = $("replace-list");
+  S.skills.forEach((s, i) => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + s.rarity;
+    d.innerHTML = `<div class="name">${s.name}</div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合</div><div class="desc">${s.desc}</div>`;
+    d.onclick = () => { S.skills[i] = newSkill; onConfirm(); setTimeout(showShop, 100); };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "返回"; back.onclick = showShop; actionbar.appendChild(back);
+}
+function showShopChallenge() {
+  S.phase = "shopChallenge";
+  content.innerHTML = `<div class="map-title">纸钱铺</div><div class="map-sub">柜台后面站着一个人。它没有脸。</div><div style="text-align:center;color:#8a8a98;font-size:13px;line-height:2;margin-bottom:24px;">它看着你。\n它记得你拒绝过那叠纸钱。\n在这栋楼里，拒绝也是一种交易。\n“你不该来的。”\n它的声音像纸在燃烧。</div><div class="btn-row" id="shop-choices"></div>`;
+  const box = $("shop-choices");
+  const c1 = document.createElement("button"); c1.className = "btn danger"; c1.textContent = "挑战店主"; c1.onclick = () => startBattle("shopkeeper"); box.appendChild(c1);
+  const c2 = document.createElement("button"); c2.className = "btn ghost"; c2.textContent = "离开（跳过）"; c2.onclick = () => { S.refusedPaper = false; nextStep(); }; box.appendChild(c2);
+  actionbar.innerHTML = "";
+}
+
+/* ============ 战斗 ============ */
+
+/** 难度缩放：随楼层与种类提升，逼迫依赖装备与道路成长 */
+function scaleGhostStats(ghost, kind) {
+  // 略降倍率：携带位增加后仍需装备，但不至于被数值压垮
+  const floorM = {6:1.10, 5:1.18, 4:1.26, 3:1.34, 2:1.42, 1:1.52};
+  const kindM = {normal:1.0, elite:1.08, boss:1.15, hidden:1.10, shopkeeper:1.12};
+  const m = (floorM[S.floor] || 1.3) * (kindM[kind] || 1);
+  const g = { ...ghost };
+  g.hp = Math.max(1, Math.floor(g.hp * m));
+  g.dmg = Math.max(1, Math.floor((g.dmg || 3) * m));
+  if (g.skills) {
+    g.skills = g.skills.map(s => {
+      const ns = { ...s };
+      if (ns.dmg) ns.dmg = Math.max(1, Math.floor(ns.dmg * m));
+      if (ns.block) ns.block = Math.max(1, Math.floor(ns.block * m));
+      return ns;
+    });
+  }
+  return g;
+}
+function startBattle(kind) {
+  let ghost, ghostTag;
+  if (kind === "normal") { const g = rnd(NORMAL_POOL[S.floor]); ghost = { ...g, intentPool: [...g.intentPool], skills: [...g.skills], battleLines: [...(g.battleLines||[])] }; ghostTag = "normal"; }
+  else if (kind === "elite") { const g = rnd(ELITE_POOL[S.floor]); ghost = { ...g, intentPool: [...g.intentPool], skills: [...g.skills], battleLines: [...(g.battleLines||[])] }; ghostTag = "elite"; }
+  else if (kind === "boss") { const g = BOSS_POOL[S.floor]; ghost = { ...g, intentPool: [...g.intentPool], skills: [...g.skills], battleLines: [...(g.battleLines||[])] }; ghostTag = "elite"; }
+  else if (kind === "hidden") { const g = HIDDEN_POOL[S.floor]; ghost = { ...g, intentPool: [...g.intentPool], skills: [...g.skills], battleLines: [...(g.battleLines||[])] }; ghostTag = "hidden"; }
+  else if (kind === "shopkeeper") { const base = BOSS_POOL[S.floor]; ghost = { name:"店主", hp: Math.floor(base.hp * 1.1), dmg: Math.floor(base.dmg * 1.1), intro:"它站起来了。\n它比你高。\n它没有脸。\n但你知道它在笑。", skills:[{ name:"挥手", type:"attack", dmg:Math.floor(base.dmg * 1.1) },{ name:"收钱", type:"special", dmg:Math.floor(base.dmg * 1.4) }], weakness:"没有弱点。", intentPool:["挥手","挥手","收钱"], battleLines:["它伸出手。","它在数钱。","它在笑。"] }; ghostTag = "elite"; }
+  else { const g = rnd(NORMAL_POOL[S.floor]); ghost = { ...g, intentPool: [...g.intentPool], skills: [...g.skills], battleLines: [...(g.battleLines||[])] }; ghostTag = "normal"; }
+  ghost = scaleGhostStats(ghost, kind);
+  S.battle = { kind, ghost, ghostTag, ghostHP: ghost.hp, ghostMaxHP: ghost.hp, ghostStunned: 0, ghostIntent: null, ghostBlock: 0, ghostDebuffs: { 破绽:0, 虚弱:0, 灼烧:0 }, ghostWeak: false, playerBlock: 0, energy: 2, maxEnergy: 2, bonusEnergy: 0, immuneNext: false, wet: 0, dark: 0, locked: false, turn: 1, log: [], cooldowns: S.skills.map(()=>0), skillsUsedThisTurn: 0, lastSkillId: null, lastDamage: 0, ghostTargetMaxHP: 0, jadeUsed: false, ironUsed: false, amuletUsed: false, paperDollUsed: false, timeStopUsed: false, _stareBuff: false, _doubleBuff: false, bandageUsed: false, oldJadeUsed: false, safetyCharmUsed: false, smokeUsed: false, anchorUsed: false, phase: "player" };
+  S.phase = "battle"; topbar.style.display = ""; updateTopbar();
+  if (hasEquip("spirit_eye")) gainInspiration(2);
+  if (hasEquip("magnifier")) gainInspiration(1);
+  if (hasPathPassive(3) && S.path === "tongling") gainInspiration(1);
+  S.pathKillInspUsed = false;
+  rollGhostIntent();
+  renderBattle();
+  const goIntro = () => {
+    if (ghost.intro) showBattleIntro(ghost.intro);
+    else startPlayerTurn();
+  };
+  if (!S.firstBattleDone) {
+    S.firstBattleDone = true;
+    showFirstBattleExplain(goIntro);
+  } else {
+    goIntro();
+  }
+}
+function showFirstBattleExplain(cb) {
+  S.phase = "firstBattle";
+  topbar.style.display = "none";
+  actionbar.innerHTML = "";
+  const lines = [
+    { text:"走廊尽头有东西。\n它没有脸。\n它朝你走来。", cls:"story-text warn" },
+    { text:"你不知道该怎么办。\n跑？喊？\n手机没有信号。", cls:"story-text dim" },
+    { text:"你试着把注意力拧在一起——\n像把恐惧捏成拳头。", cls:sanityClass() },
+    { text:"你打了出去。\n它晃了一下。\n你也疼了一下。", cls:sanityClass() },
+    { text:"这不是打架。\n是用意志去撞它的存在。\n在这栋楼里，这叫「精神冲击」。", cls:"story-text warn" },
+    { text:"定力是你护住自己的壳。\n专注是你还能想几步。\n\n你只有这些。", cls:"story-text dim" },
+  ];
+  playStoryLines(lines, () => {
+    topbar.style.display = "";
+    updateTopbar();
+    cb && cb();
+  }, { interval: 850, btnLabel: "我明白了", forceShow: true });
+}
+function showBattleIntro(intro) {
+  S.phase = "battleIntro";
+  actionbar.innerHTML = "";
+  const parts = (intro || "").split(/\n\n/).filter(s => s.trim());
+  const lines = parts.length > 1 ? parts : (intro || "").split("\n").reduce((acc, line) => {
+    if (!acc.length) return [line];
+    // 每 2-3 行合一段
+    if (acc[acc.length-1].split("\n").length < 3) acc[acc.length-1] += "\n" + line;
+    else acc.push(line);
+    return acc;
+  }, []);
+  playStoryLines(lines.length ? lines : [intro], () => { renderBattle(); startPlayerTurn(); }, { interval: 900, btnLabel: "接 招" });
+}
+function rollGhostIntent() { const b = S.battle; if (!b) return; b.ghostIntent = b.ghost.intentPool[Math.floor(Math.random() * b.ghost.intentPool.length)]; }
+function renderBattle() {
+  const b = S.battle; if (!b) return;
+  const reveal = getGhostReveal(); const ghost = b.ghost;
+  if (hasEquip("bronze_mirror")) reveal.weakness = true;
+  let intentHTML = "";
+  if (reveal.intent || hasTalent("t_sixth")) {
+    const skillDef = ghost.skills.find(s => s.name === b.ghostIntent);
+    let cls = "defend", ic = "🛡", pred = "";
+    if (skillDef) {
+      if (skillDef.type === "attack") { cls = "attack"; ic = "⚔"; }
+      else if (skillDef.type === "special") { cls = "special"; ic = "✦"; }
+      else { cls = "defend"; ic = "🛡"; }
+      if (skillDef.dmg) pred = `约 ${skillDef.dmg} 冲击`;
+      else if (skillDef.block) pred = `约 ${skillDef.block} 定力`;
+      else if (skillDef.type === "special") pred = "特殊效果";
+    }
+    intentHTML = `<span class="intent intent-detail ${cls}"><span class="ic">${ic}</span>${b.ghostIntent}${pred ? `<span class="pred">${pred}</span>` : ""}</span>`;
+  } else { intentHTML = `<span class="intent hidden">？ 意图未知</span>`; }
+  let tagHTML = "";
+  if (b.ghostTag === "elite") tagHTML = `<span class="ghost-tag elite">精英</span>`;
+  else if (b.ghostTag === "hidden") tagHTML = `<span class="ghost-tag hidden">暗处</span>`;
+  else tagHTML = `<span class="ghost-tag normal">普通</span>`;
+  let ghostInfoHTML = "";
+  if (reveal.skills || reveal.weakness) {
+    ghostInfoHTML = `<div class="ghost-info">`;
+    if (reveal.skills) ghostInfoHTML += `<div><span class="label">技能：</span><span class="value">${ghost.skills.map(s=>s.name).join(" / ")}</span></div>`;
+    if (reveal.weakness && ghost.weakness) ghostInfoHTML += `<div><span class="weak">弱点：</span><span class="value">${ghost.weakness}</span></div>`;
+    ghostInfoHTML += `</div>`;
+  }
+  let statusHTML = "";
+  if (b.wet > 0) statusHTML += `<span class="status-tag debuff">潮湿 ${b.wet}</span>`;
+  if (b.dark > 0) statusHTML += `<span class="status-tag debuff">暗幕 ${b.dark}</span>`;
+  if (b.locked) statusHTML += `<span class="status-tag debuff">锁门</span>`;
+  if (b.ghostBlock > 0) statusHTML += `<span class="status-tag debuff">鬼盾 ${b.ghostBlock}</span>`;
+  if (b.ghostDebuffs.破绽 > 0) statusHTML += `<span class="status-tag special">破绽 ${b.ghostDebuffs.破绽}</span>`;
+  if (b.ghostDebuffs.虚弱 > 0) statusHTML += `<span class="status-tag special">虚弱 ${b.ghostDebuffs.虚弱}</span>`;
+  if (b.ghostDebuffs.灼烧 > 0) statusHTML += `<span class="status-tag special">灼烧 ${b.ghostDebuffs.灼烧}</span>`;
+  if (b.immuneNext) statusHTML += `<span class="status-tag buff">免疫</span>`;
+  content.innerHTML = `<div class="battle-header"><div class="ghost-line"><span class="ghost-name">${ghost.name}${tagHTML}</span>${intentHTML}</div></div>${ghostInfoHTML}${statusHTML ? `<div class="status-row">${statusHTML}</div>` : ""}<div class="log-area" id="log-area"></div><div class="energy-row"><span title="你能集中的注意力。用完就得撑过这一轮。">专注</span><span class="en" id="energy-text">${b.energy}/${b.maxEnergy}</span><span class="crit">暴击 ${Math.floor(getCritRate()*100)}%</span></div><div class="skill-slots" id="skill-slots"></div>`;
+  renderLog(); renderSkillSlots();
+}
+function renderLog() {
+  const b = S.battle; const el = $("log-area"); if (!el) return;
+  el.innerHTML = "";
+  b.log.slice(-6).forEach(e => { const d = document.createElement("div"); d.className = e.cls || ""; d.textContent = garbleText(e.text); el.appendChild(d); });
+  el.scrollTop = el.scrollHeight;
+}
+function addLog(text, cls) { if (S.battle) { S.battle.log.push({ text, cls }); renderLog(); } }
+function hideSkillTip() {
+  const tip = document.getElementById("skill-tip");
+  if (tip) tip.remove();
+}
+function showSkillTip(skill) {
+  hideSkillTip();
+  if (!skill) return;
+  const tip = document.createElement("div");
+  tip.id = "skill-tip";
+  tip.className = "skill-tip";
+  const rn = {common:"普通", rare:"高级", legend:"传说"}[skill.rarity] || "";
+  const pathMark = skill.path && PATHS[skill.path] ? PATHS[skill.path].name : "";
+  tip.innerHTML = `<div class="tn">${skill.name}${skill.enhance ? " +" + skill.enhance : ""} <span style="color:#6a6a78;font-size:11px;">${rn}${pathMark ? " · "+pathMark : ""}</span></div>
+    <div class="tc">消耗 ${skill.cost} 专注 · 冷却 ${skill.cd} 回合${skill.req ? " · 需灵感 "+skill.req : ""}</div>
+    <div class="td">${skill.desc}</div>
+    <div class="tf">${skill.flavor || ""}</div>`;
+  document.body.appendChild(tip);
+}
+function renderSkillSlots() {
+  const b = S.battle; const el = $("skill-slots"); if (!el) return;
+  el.innerHTML = "";
+  S.skills.forEach((skill, idx) => {
+    const slot = document.createElement("div");
+    if (!skill) { slot.className = "skill-slot empty"; slot.innerHTML = `<div class="sname">空</div>`; el.appendChild(slot); return; }
+    const cd = b.cooldowns[idx] || 0;
+    const canUse = cd === 0 && b.energy >= skill.cost && !b.locked && b.phase === "player";
+    slot.className = "skill-slot" + (canUse ? "" : " disabled");
+    const enh = skill.enhance ? `+${skill.enhance}` : "";
+    slot.innerHTML = `<div class="cost">${skill.cost}</div><div class="cd ${cd === 0 ? "ready" : ""}">${cd === 0 ? "✓" : cd}</div><div class="sname">${garbleText(skill.name)}${enh ? `<span style="color:#c8a850;font-size:9px;">${enh}</span>` : ""}</div><div class="sdesc">${garbleText(skill.desc)}</div>`;
+    let pressTimer = null;
+    let longPressed = false;
+    const startPress = (e) => {
+      longPressed = false;
+      pressTimer = setTimeout(() => {
+        longPressed = true;
+        showSkillTip(skill);
+        sfx("click");
+      }, 380);
+    };
+    const endPress = (e) => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      hideSkillTip();
+      if (longPressed) { longPressed = false; return; }
+      if (canUse) useSkill(idx);
+    };
+    const cancelPress = () => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      hideSkillTip();
+    };
+    slot.addEventListener("touchstart", startPress, { passive: true });
+    slot.addEventListener("touchend", endPress);
+    slot.addEventListener("touchcancel", cancelPress);
+    slot.addEventListener("mousedown", startPress);
+    slot.addEventListener("mouseup", endPress);
+    slot.addEventListener("mouseleave", cancelPress);
+    // 阻止短按冒泡成 click 双触发
+    slot.onclick = (e) => { e.preventDefault(); };
+    el.appendChild(slot);
+  });
+  const e = $("energy-text"); if (e) e.textContent = b.energy + "/" + b.maxEnergy;
+}
+function startPlayerTurn() {
+  const b = S.battle; if (!b) return;
+  // 基础专注 2，装备加成后上限 4
+  let en = 2;
+  if (hasEquip("hourglass")) en += 1;
+  if (hasEquip("time_glass")) en += 1;
+  if (hasEquip("soft_shoes") && b.turn === 1) en += 1;
+  if (hasEquip("shop_ledger")) en += 1;
+  if (b.bonusEnergy) { en += b.bonusEnergy; b.bonusEnergy = 0; }
+  if (hasTalent("t_laststand") && S.hp < S.maxHP * 0.25) en += 1;
+  b.maxEnergy = Math.min(4, en);
+  b.energy = b.maxEnergy;
+  b.playerBlock = 0;
+  if (hasEquip("wristband")) b.playerBlock += 3;
+  if (hasTalent("t_veil") && b.turn === 1) b.playerBlock += 4;
+  if (hasTalent("t_lightfoot") && b.turn === 1) b.playerBlock += 1;
+  if (hasPathPassive(3) && S.path === "zhenhun") b.playerBlock += 2;
+  if (hasEquip("iron_chain") && b.turn === 1) b.playerBlock += 5;
+  if (hasEquip("candle") && b.turn === 1) b.immuneNext = true;
+  b.skillsUsedThisTurn = 0;
+  b._sightUsed = false;
+  b.cooldowns = b.cooldowns.map(c => Math.max(0, c - 1));
+  b.phase = "player";
+  renderBattle(); updateTopbar(); renderActionbarBattle();
+}
+function renderActionbarBattle() {
+  actionbar.innerHTML = "";
+  const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "结束回合"; btn.disabled = !S.battle || S.battle.phase !== "player"; btn.onclick = endPlayerTurn; actionbar.appendChild(btn);
+  if (hasTalent("t_stop") && S.battle && !S.battle.timeStopUsed && S.battle.phase === "player") {
+    const btn2 = document.createElement("button"); btn2.className = "btn"; btn2.textContent = "时停（1次）";
+    btn2.onclick = () => { S.battle.timeStopUsed = true; S.battle.ghostStunned = 1; addLog("时间停止了。它停住了。", "special"); renderActionbarBattle(); };
+    actionbar.appendChild(btn2);
+  }
+  if (hasEquip("smoke_bomb") && S.battle && !S.battle.smokeUsed && S.battle.phase === "player") {
+    const btn3 = document.createElement("button"); btn3.className = "btn"; btn3.textContent = "烟雾弹（跳过鬼魂1次）";
+    btn3.onclick = () => { S.battle.smokeUsed = true; S.battle.ghostStunned = 1; addLog("你扔出烟雾弹。", "special"); renderActionbarBattle(); };
+    actionbar.appendChild(btn3);
+  }
+}
+function useSkill(idx) {
+  const b = S.battle; if (!b || b.phase !== "player") return;
+  const skill = S.skills[idx]; if (!skill) return;
+  if (b.cooldowns[idx] > 0) return;
+  let realCost = skill.cost;
+  if (hasTalent("t_scar") && b.skillsUsedThisTurn === 0) realCost = Math.max(0, realCost - 1);
+  if (b.energy < realCost) return;
+  if (b.locked) return;
+  b.energy -= realCost;
+  let cdValue = skill.cd + 1; let skipCd = false;
+  if (hasTalent("t_cat") && b.skillsUsedThisTurn === 0) skipCd = true;
+  if (hasTalent("t_echo") && Math.random() < 0.25) skipCd = true;
+  if (hasEquip("shop_ledger")) cdValue += 1;
+  if (!skipCd) b.cooldowns[idx] = cdValue;
+  b.lastSkillId = skill.id; b.skillsUsedThisTurn++;
+  S.noSkillUsed = false;
+  b._skillCastCount = (b._skillCastCount || 0) + 1;
+  addLog(`你使用了「${skill.name}」。`);
+  if (skill.flavor) addLog(skill.flavor, "flavor");
+  sfx("skill");
+  const isFirst = b.skillsUsedThisTurn === 1;
+  if (hasTalent("t_double") && isFirst) b._doubleBuff = true;
+  b._enhanceBonus = (skill.enhance || 0) * 2; // 普通技能每级强化 +2
+  skill.effect();
+  b._enhanceBonus = 0;
+  b._doubleBuff = false;
+  // 第四下：每第4次技能额外冲击
+  if (hasBossSpecial("bs_fourth") && b._skillCastCount % 4 === 0 && b.ghostHP > 0) {
+    addLog("第四下！", "special");
+    dealDamage(8, true);
+  }
+  if (b.ghostHP <= 0) { onBattleWin(); return; }
+  if (S.hp <= 0) { onBattleLose(); return; }
+  renderBattle(); renderActionbarBattle();
+}
+function applyDebuff(name, stacks) { const b = S.battle; if (!b) return; b.ghostDebuffs[name] = (b.ghostDebuffs[name] || 0) + stacks; addLog(`鬼魂被施加了 ${stacks} 层${name}。`, "special"); }
+function consumeDebuff(name) { const b = S.battle; if (!b) return 0; const v = b.ghostDebuffs[name] || 0; b.ghostDebuffs[name] = 0; if (v > 0) addLog(`消耗了 ${v} 层${name}。`, "special"); return v; }
+function clearWet(n) { const b = S.battle; if (!b) return; const before = b.wet; b.wet = Math.max(0, b.wet - n); if (before > 0 && b.wet < before) addLog(`清除了 ${before - b.wet} 层潮湿。`, "special"); }
+function dealDamage(n, ignoreBlock) {
+  const b = S.battle; if (!b || b.ghostHP <= 0) return;
+  let dmg = n + (b._enhanceBonus || 0);
+  if (S._grudgeBoost) { dmg += 3; S._grudgeBoost = false; addLog("记仇：额外 +3。", "special"); }
+  if (hasEquip("iron_stick")) dmg += 2;
+  if (hasEquip("hunter_eye")) dmg += 2;
+  if (hasPathPassive(3) && S.path === "powang") dmg += 1;
+  if (hasEquip("coin_sword")) { dmg += 2; ignoreBlock = true; }
+  if (hasEquip("lighter") && b.lastSkillId === "burn") dmg += 3;
+  if (hasEquip("time_glass") && b.turn === 1) dmg = Math.max(1, dmg - 2);
+  if (hasTalent("t_blood")) { const missing = 1 - S.hp / S.maxHP; dmg = Math.floor(dmg * (1 + missing * 0.5)); }
+  if (hasTalent("t_reaper") && b.ghostHP / b.ghostMaxHP < 0.25) dmg *= 2;
+  if (b._doubleBuff) dmg = Math.floor(dmg * 1.5);
+  if (b._stareBuff) { dmg = Math.floor(dmg * 1.5); b._stareBuff = false; addLog("凝视生效。","special"); }
+  // BOSS 专长
+  if (hasBossSpecial("bs_mirror") && b.ghostBlock > 0) dmg += 4;
+  if (hasBossSpecial("bs_sight") && b.dark > 0 && !b._sightUsed) { dmg += 3; b._sightUsed = true; }
+  const critRate = getCritRate();
+  let isCrit = false;
+  if (critRate > 0 && Math.random() < critRate) { dmg = Math.floor(dmg * 2); isCrit = true; addLog("暴击！", "special"); if (hasPathPassive(9) && S.path === "powang") { dmg += 4; addLog("碎裂：额外 4 点。", "special"); } }
+  let actual = dmg;
+  if (!ignoreBlock && b.ghostBlock > 0) { const absorbed = Math.min(b.ghostBlock, dmg); b.ghostBlock -= absorbed; actual = dmg - absorbed; if (absorbed > 0) addLog(`鬼魂定力吸收了 ${absorbed} 点。`, "block"); }
+  if (actual > 0) {
+    b.ghostHP = Math.max(0, b.ghostHP - actual); b.lastDamage = actual;
+    addLog(`造成了 ${actual} 点精神冲击。`, "dmg");
+    floatText("-" + actual, "normal", isCrit);
+    if (isCrit) { critFlash(); screenShake(); }
+    else { sfx("dmg"); }
+    if (hasBossSpecial("bs_dry") && b.wet > 0) { b.wet = Math.max(0, b.wet - 1); addLog("抽干：潮湿 -1。", "special"); }
+  }
+  if (hasTalent("t_vampire")) heal(2);
+  if (b.ghost.name.indexOf("镜子鬼") >= 0 && b.ghostBlock > 0 && !ignoreBlock) { S.hp -= 3; addLog("镜面反弹了3点精神冲击。", "dmg"); floatText("-3", "normal", false); }
+  // 实时刷新鬼魂/玩家血条（多段技能也会每段刷新）
+  updateTopbar();
+  if (b.ghostHP <= 0) { b.ghostHP = 0; updateTopbar(); onBattleWin(); }
+}
+function gainBlock(n) { const b = S.battle; if (!b) return; n = n + (b._enhanceBonus || 0); b.playerBlock += n; addLog(`获得 ${n} 点定力。`, "block"); floatText("+" + n, "block", false); sfx("block"); }
+function heal(n) { const b = S.battle; if (!b) return; S.hp = Math.min(S.maxHP, S.hp + n); addLog(`恢复了 ${n} 点理智。`, "heal"); floatText("+" + n, "heal", false); updateTopbar(); sfx("heal"); }
+function stunGhost() { if (!S.battle) return; S.battle.ghostStunned = 1; addLog(`鬼魂被眩晕了。`, "special"); }
+function endPlayerTurn() {
+  const b = S.battle; if (!b || b.phase !== "player") return;
+  if (b.energy > 0) {
+    const conv = b.energy;
+    b.playerBlock += conv;
+    addLog("未用的专注凝成 " + conv + " 点定力。", "block");
+    b.energy = 0;
+  }
+  b.locked = false; b.phase = "ghost";
+  renderBattle(); renderActionbarBattle();
+  setTimeout(ghostTurn, 500);
+}
+function ghostTurn() {
+  const b = S.battle; if (!b || b.ghostHP <= 0) return;
+  if (b.ghostDebuffs.灼烧 > 0) { const burnDmg = 5; b.ghostHP = Math.max(0, b.ghostHP - burnDmg); addLog(`灼烧造成 ${burnDmg} 点精神冲击。`, "dmg"); floatText("-" + burnDmg, "normal", false); b.ghostDebuffs.灼烧--; updateTopbar(); if (b.ghostHP <= 0) { b.ghostHP = 0; updateTopbar(); onBattleWin(); return; } }
+  if (b.ghostStunned > 0) { b.ghostStunned--; addLog(`${b.ghost.name}没有动。`, "sys"); endGhostTurn(); return; }
+  if (b.ghost.battleLines && b.ghost.battleLines.length > 0 && Math.random() < 0.35) addLog(rnd(b.ghost.battleLines), "flavor");
+  executeGhostSkill(b.ghost, b.ghostIntent);
+  if (S.hp <= 0) { S.hp = 0; updateTopbar(); onBattleLose(); return; }
+  endGhostTurn();
+}
+function executeGhostSkill(ghost, skillName) {
+  const b = S.battle;
+  const isEnraged = b.ghostHP / b.ghostMaxHP < 0.5 && ghost.name.indexOf("门鬼") >= 0;
+  let dmgMult = isEnraged ? 2 : 1;
+  if (b.ghostDebuffs.虚弱 > 0) { dmgMult *= 0.5; b.ghostDebuffs.虚弱--; addLog("虚弱使鬼魂精神冲击减半。", "special"); }
+  if (b.ghostWeak) { dmgMult *= 0.5; b.ghostWeak = false; addLog("虚空削弱了鬼魂。", "special"); }
+  const skill = ghost.skills.find(s => s.name === skillName) || ghost.skills[0];
+  if (skillName === "水压") { const dmg = b.wet * 3; if (dmg > 0) dealGhostDamage(dmg, skillName); else addLog(`${ghost.name}使用了「水压」，但没有潮湿。`, "sys"); rollGhostIntent(); return; }
+  if (skillName === "失明") { b.dark++; addLog(`${ghost.name}使用了「失明」。`, "special"); if (b.dark >= 3) { b.locked = true; b.dark = 0; addLog("你失明了！下回合无法使用技能。", "special"); } rollGhostIntent(); return; }
+  if (skillName === "啃咬") { dealGhostDamage(6 * dmgMult, skillName); if (S.hp > 0) { const stolen = Math.min(1, S.maxHP - 20); S.maxHP -= stolen; b.ghostTargetMaxHP += stolen; S.hp = Math.min(S.hp, S.maxHP); addLog("你失去了1点最大理智。", "special"); if (hasBossSpecial("bs_starve") && stolen > 0) { heal(stolen); addLog("反噬：回复了被偷的理智。", "special"); } updateTopbar(); } rollGhostIntent(); return; }
+  if (skillName === "吞食") { dealGhostDamage(9 * dmgMult, skillName); if (S.hp > 0) { const stolen = Math.min(2, S.maxHP - 20); S.maxHP -= stolen; b.ghostTargetMaxHP += stolen; S.hp = Math.min(S.hp, S.maxHP); addLog("你失去了2点最大理智。", "special"); if (hasBossSpecial("bs_starve") && stolen > 0) { heal(stolen); addLog("反噬：回复了被偷的理智。", "special"); } updateTopbar(); } rollGhostIntent(); return; }
+  if (skillName === "锁门") { b.locked = true; addLog(`${ghost.name}使用了「锁门」。`, "special"); rollGhostIntent(); return; }
+  if (skillName === "开门") { dealGhostDamage(14 * dmgMult, skillName); if (b.ghostHP > 0) { b.ghostHP -= 5; addLog(`${ghost.name}自伤了5点。`, "sys"); if (hasBossSpecial("bs_key")) { heal(5); addLog("门钥：你从门缝里捞回一点清醒。", "special"); } if (b.ghostHP <= 0) { b.ghostHP = 0; onBattleWin(); return; } } rollGhostIntent(); return; }
+  if (skillName === "镜面") { b.ghostBlock += 6; addLog(`${ghost.name}使用了「镜面」。获得6定力。`, "sys"); rollGhostIntent(); return; }
+  if (skillName === "镜像") { if (b.lastSkillId) { const s = skillById(b.lastSkillId); if (s) { addLog(`${ghost.name}使用了「镜像」，复制了「${s.name}」。`, "special"); dealGhostDamage(6 * dmgMult, "镜像"); rollGhostIntent(); return; } } dealGhostDamage(5 * dmgMult, "镜像"); rollGhostIntent(); return; }
+  if (skillName === "溅水") { b.wet += 1; let dmg = 5 * dmgMult; if (b.wet > 0) dmg += b.wet; dealGhostDamage(dmg, skillName); rollGhostIntent(); return; }
+  if (skillName === "淹没") { b.wet += 2; let dmg = 8 * dmgMult; if (b.wet > 0) dmg += b.wet; dealGhostDamage(dmg, skillName); rollGhostIntent(); return; }
+  if (skillName === "暗幕") { b.dark++; dealGhostDamage(7 * dmgMult, skillName); rollGhostIntent(); return; }
+  let dmg = (skill.dmg || ghost.dmg) * dmgMult;
+  if (b.wet > 0) dmg += b.wet;
+  dealGhostDamage(dmg, skillName);
+  rollGhostIntent();
+}
+function dealGhostDamage(dmg, skillName) {
+  const b = S.battle;
+  if (b.immuneNext) { b.immuneNext = false; addLog("免疫了这次精神冲击。", "special"); return; }
+  if (hasPathPassive(9) && S.path === "zhenhun") { dmg = Math.max(1, dmg - 1); }
+  if (hasEquip("bandage") && !b.bandageUsed) { b.bandageUsed = true; dmg = Math.floor(dmg / 2); addLog("绷带减半了伤害。", "special"); }
+  if (hasEquip("paper_doll") && !b.paperDollUsed && S.hp - dmg <= 0) { b.paperDollUsed = true; S.hp = 15; updateTopbar(); addLog("纸人替身碎裂了。你清醒了过来。", "special"); return; }
+  if (hasEquip("old_jade") && !b.oldJadeUsed && S.hp - dmg <= 0) { b.oldJadeUsed = true; S.hp = 20; updateTopbar(); addLog("旧玉佩碎裂了。你活了下来。", "special"); return; }
+  if (hasEquip("safety_charm") && !b.safetyCharmUsed && S.hp - dmg <= 0) { b.safetyCharmUsed = true; S.hp = 10; updateTopbar(); addLog("平安符碎裂了。你活了下来。", "special"); return; }
+  if (hasEquip("jade") && !b.jadeUsed) { b.jadeUsed = true; dmg = Math.floor(dmg / 2); addLog("玉佩减半了第一次精神冲击。", "special"); }
+  if (hasTalent("t_iron") && !b.ironUsed) { b.ironUsed = true; dmg = Math.floor(dmg / 2); addLog("铁胆减半了精神冲击。", "special"); }
+  if (hasTalent("t_thick") && Math.random() < 0.15) { dmg = Math.max(1, dmg - 2); addLog("厚脸皮：少受了2点。", "special"); }
+  const absorbed = Math.min(b.playerBlock, dmg);
+  b.playerBlock -= absorbed;
+  const actual = dmg - absorbed;
+  if (absorbed > 0) addLog(`定力吸收了 ${absorbed} 点精神冲击。`, "block");
+  if (actual > 0) {
+    S.hp -= actual;
+    addLog(`${b.ghost.name}的「${skillName}」造成 ${actual} 点精神冲击。`, "dmg");
+    floatText("-" + actual, "normal", false);
+    sfx("dmg");
+    if (actual >= 10) screenShake();
+    if (S.hp <= 30) sfx("lowhp");
+    updateTopbar();
+    if (hasTalent("t_thorn")) { b.ghostHP -= 4; addLog("荆棘反弹4点精神冲击。", "dmg"); if (b.ghostHP <= 0) { b.ghostHP = 0; onBattleWin(); } }
+    if (b._reflectHalf) {
+      const ref = Math.max(1, Math.floor(actual / 2));
+      b.ghostHP = Math.max(0, b.ghostHP - ref);
+      addLog("心城反弹 " + ref + " 点。", "special");
+      b._reflectHalf = false;
+      if (b.ghostHP <= 0) { b.ghostHP = 0; onBattleWin(); }
+    }
+    if (hasTalent("t_anchor") && !b.anchorUsed && S.hp > 0 && S.hp <= 30) {
+      b.anchorUsed = true;
+      b.playerBlock += 12;
+      heal(8);
+      addLog("锚点：你抓住了那根钉子。+12定力，回复8理智。", "special");
+    }
+  } else { addLog(`${b.ghost.name}使用了「${skillName}」。`, "sys"); }
+}
+function endGhostTurn() { const b = S.battle; b.turn++; b.phase = "player"; startPlayerTurn(); }
+
+function onBattleWin() {
+  const b = S.battle; if (!b) return;
+  b.phase = "won"; S.kills++;
+  sfx("win");
+  if (hasPathPassive(9) && S.path === "tongling" && !S.pathKillInspUsed) {
+    S.pathKillInspUsed = true;
+    gainInspiration(1);
+    addLog("全知：灵感 +1。", "special");
+  }
+  if (hasTalent("t_whisper") && Math.random() < 0.5) {
+    gainInspiration(1);
+    addLog("耳语：灵感 +1。", "special");
+  }
+  if (hasTalent("t_grudge")) {
+    S._grudgeBoost = true;
+  }
+  if (b.ghostTargetMaxHP > 0) { S.maxHP += b.ghostTargetMaxHP; S.hp = Math.min(S.maxHP, S.hp + b.ghostTargetMaxHP); addLog(`被偷取的最大理智恢复了。`, "heal"); b.ghostTargetMaxHP = 0; }
+  let paper = b.kind === "boss" ? 50 : (b.kind === "elite" ? 30 : 15);
+  if (b.kind === "shopkeeper") paper = 60;
+  if (b.kind === "hidden") paper = 60;
+  S.paper += paper;
+  if (hasTalent("t_pocket")) { S.paper += 5; paper += 5; }
+  if (hasTalent("t_packrat")) { const bonus = Math.floor(paper * 0.2); S.paper += bonus; paper += bonus; }
+  if (hasEquip("vial")) S.hp = Math.min(S.maxHP, S.hp + 5);
+  const expGain = getKillExp(b.kind, S.floor, b.ghost);
+  addLog(`${b.ghost.name}消失了。`, "sys");
+  addLog(`获得 ${paper} 纸钱 · ${expGain} 经验。`, "sys");
+  gainExp(expGain);
+  updateTopbar();
+
+  // BOSS 专长尝试
+  let droppedSpecial = null;
+  if (b.kind === "boss") {
+    droppedSpecial = tryBossSpecialDrop(S.floor);
+  }
+
+  if (b.kind === "boss") {
+    // 记录遗言解锁
+    if (!META.heardLastWords) META.heardLastWords = [];
+    if (!META.heardLastWords.includes(S.floor)) {
+      META.heardLastWords.push(S.floor);
+      saveMeta(META);
+    }
+    setTimeout(() => showBossWin(droppedSpecial), 700);
+    return;
+  }
+  if (b.kind === "hidden") {
+    setTimeout(() => showHiddenReward(), 700);
+    return;
+  }
+  // 普通/精英：短遗言
+  setTimeout(() => {
+    if (b.kind === "shopkeeper") {
+      const drop = rnd(EQUIPS.filter(e => e.exclusive));
+      S.shopGone = true; S.refusedPaper = false;
+      content.innerHTML = `<div class="reward-title">店主倒下了</div><div class="map-sub">你从他身上搜到了「${drop.name}」。</div><div class="map-sub" style="margin-top:8px;color:#c8a850;">${drop.desc}</div><div class="map-sub" style="margin-top:8px;color:#5a5a78;font-style:italic;">${drop.flavor}</div><div class="map-sub" style="margin-top:16px;color:#6a6a78;">纸钱铺消失了。之后的楼层不再出现。</div><div class="reward-list" id="shop-drop"></div>`;
+      const list = $("shop-drop");
+      const d = document.createElement("div"); d.className = "reward-card rarity-legend";
+      d.innerHTML = `<div class="name">${drop.name}</div><div class="desc">${drop.desc}</div><div class="flavor">${drop.flavor}</div>`;
+      d.onclick = () => { if (S.equips.length >= MAX_EQUIPS) showReplaceEquipWithCallback(drop, () => processPostBattle(b.kind)); else { addEquip(drop); processPostBattle(b.kind); } };
+      list.appendChild(d);
+      actionbar.innerHTML = "";
+      const skip = document.createElement("button"); skip.className = "btn ghost"; skip.textContent = "不拿"; skip.onclick = () => processPostBattle(b.kind); actionbar.appendChild(skip);
+    } else {
+      showKillMoment(b, () => processPostBattle(b.kind));
+    }
+  }, 700);
+}
+function showKillMoment(b, cb) {
+  const line = (b.ghost && b.ghost.deathLine) || (GENERIC_DEATH[Math.floor(Math.random()*GENERIC_DEATH.length)]);
+  content.innerHTML = `<div style="padding:48px 24px;text-align:center;min-height:40vh;display:flex;flex-direction:column;justify-content:center;">
+    <div class="map-sub" style="color:#8a8a98;margin-bottom:8px;">${b.ghost ? b.ghost.name : "它"}</div>
+    <div class="story-text warn show" style="white-space:pre-wrap;line-height:2.2;">${garbleText(line)}</div>
+  </div>`;
+  actionbar.innerHTML = "";
+  const btn = document.createElement("button");
+  btn.className = "btn primary";
+  btn.textContent = "继 续";
+  btn.onclick = cb;
+  actionbar.appendChild(btn);
+  // 自动推进
+  setTimeout(() => { if (S.phase === "won" || (S.battle && S.battle.phase === "won")) { /* wait click */ } }, 50);
+}
+/** 战后流程：先处理升级学技能，再精英/BOSS装备 */
+function processPostBattle(kind) {
+  if (S.pendingLevelUps > 0) {
+    showLevelUpReward(kind);
+    return;
+  }
+  if (kind === "elite" || kind === "boss") {
+    showEquipReward(kind);
+    return;
+  }
+  nextStep();
+}
+function showHiddenReward() {
+  S.phase = "reward";
+  // 暗处仍可窥见禁忌技能（例外），否则走升级
+  const legendSkills = shuffle(SKILLS.filter(s => s.rarity === "legend" && (s.req||0) <= S.inspiration)).slice(0, 2);
+  content.innerHTML = `<div class="reward-title">暗处留下的东西</div><div class="map-sub">你看见了不该看见的。\n它在你脑子里留了一点痕迹。</div><div class="reward-list" id="reward-list"></div>`;
+  const list = $("reward-list");
+  if (legendSkills.length) {
+    legendSkills.forEach(s => {
+      const d = document.createElement("div"); d.className = "reward-card rarity-legend";
+      d.innerHTML = `<div class="name">${s.name} <span style="color:#c8a850;font-size:11px;">传说</span></div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合 · 需要灵感 ${s.req}</div><div class="desc">${s.desc}</div><div class="flavor">${s.flavor}</div>`;
+      d.onclick = () => {
+        if (S.skills.indexOf(null) < 0) showReplaceSkill(s, () => processPostBattle("hidden"));
+        else { addSkillToSlot(s); processPostBattle("hidden"); }
+      };
+      list.appendChild(d);
+    });
+  }
+  actionbar.innerHTML = "";
+  const skip = document.createElement("button"); skip.className = "btn ghost"; skip.textContent = legendSkills.length ? "跳过" : "继续";
+  skip.onclick = () => processPostBattle("hidden");
+  actionbar.appendChild(skip);
+}
+function showBossWin(droppedSpecial) {
+  S.phase = "bossWin";
+  let extra = "";
+  if (droppedSpecial) {
+    extra = `<div style="margin-top:28px;color:#c8a850;font-size:13px;line-height:1.9;">有什么东西留了下来。\n「${droppedSpecial.name}」\n${droppedSpecial.desc}\n<span style="color:#5a5a78;font-style:italic;">${droppedSpecial.flavor}</span></div>`;
+  } else if (S.bossPity > 0) {
+    extra = `<div style="margin-top:20px;color:#4a4a58;font-size:11px;">（专长保底 ${S.bossPity}/4）</div>`;
+  }
+  // 先遗言，再退场
+  const lastWords = BOSS_LAST_WORDS[S.floor] || "";
+  const afterLast = () => {
+    content.innerHTML = `<div style="padding:40px 24px;display:flex;flex-direction:column;justify-content:center;min-height:60vh;"><div class="ghost-intro" style="text-align:center;color:#8a8a98;">${garbleText(BOSS_WIN[S.floor] || "").replace(/\n/g,"<br>")}</div>${extra}</div>`;
+    actionbar.innerHTML = "";
+    const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "继 续";
+    btn.onclick = () => {
+      if (S.floor === 1) { showEnd(true); return; }
+      processPostBattle("boss");
+    };
+    actionbar.appendChild(btn);
+  };
+  if (lastWords) {
+    S.phase = "bossLastWords";
+    topbar.style.display = "none";
+    actionbar.innerHTML = "";
+    const parts = lastWords.split("\n\n").filter(Boolean);
+    playStoryLines(parts, afterLast, { interval: 900, btnLabel: "……", cls: "story-text warn" });
+  } else {
+    afterLast();
+  }
+}
+/** 升级时选择技能（技能主要获取途径） */
+function showLevelUpReward(kind) {
+  S.phase = "levelup";
+  topbar.style.display = "";
+  updateTopbar();
+  const remaining = S.pendingLevelUps;
+  const gainedPassives = checkPathPassivesOnLevel();
+  let weightKind = "normal";
+  if (S.level >= 8) weightKind = "boss";
+  else if (S.level >= 5) weightKind = "elite";
+  else if (S.level >= 3) weightKind = "elite";
+  // 新技能（已拥有的不会出现）+ 可强化的普通技能
+  let options = pickWeightedSkills(3, weightKind);
+  const enhanceable = S.skills.filter(s => canEnhanceSkill(s));
+  // 若新技能不足 3，用强化补足；至少保证有选项
+  while (options.length < 3 && enhanceable.length) {
+    const s = enhanceable.splice(Math.floor(Math.random()*enhanceable.length), 1)[0];
+    options.push({ _enhance: true, ref: s });
+  }
+  // 若仍有空位且还有可强化，随机把一张新技能换成强化（约 30%）
+  if (enhanceable.length && options.length >= 2 && Math.random() < 0.35) {
+    const s = enhanceable[Math.floor(Math.random()*enhanceable.length)];
+    options[options.length - 1] = { _enhance: true, ref: s };
+  }
+  if (!options.length && S.skills.some(canEnhanceSkill)) {
+    options = S.skills.filter(canEnhanceSkill).slice(0, 3).map(s => ({ _enhance: true, ref: s }));
+  }
+  const pathHint = S.path && PATHS[S.path] ? PATHS[S.path].name : "";
+  let passiveHtml = "";
+  if (gainedPassives.length) {
+    passiveHtml = gainedPassives.map(p => `<div class="map-sub" style="color:#c8a850;margin-bottom:8px;">道路觉醒：${p.name} — ${p.desc}</div>`).join("");
+  }
+  content.innerHTML = `<div class="reward-title">等 级 提 升</div><div class="map-sub">Lv.${S.level}${pathHint ? " · " + pathHint : ""}${remaining > 1 ? `（还有 ${remaining - 1} 次）` : ""}\n你从恐惧里学到了什么。</div>${passiveHtml}<div class="reward-list" id="reward-list"></div>`;
+  const list = $("reward-list");
+  options.forEach(opt => {
+    const d = document.createElement("div");
+    if (opt && opt._enhance) {
+      const s = opt.ref;
+      const lv = (s.enhance || 0) + 1;
+      d.className = "reward-card rarity-common";
+      d.style.borderColor = "#c8a850";
+      d.innerHTML = `<div class="name">强化 · ${s.name} <span style="color:#c8a850;font-size:11px;">Lv.${s.enhance||0}→${lv}/5</span></div>
+        <div class="cost-line">精神冲击/定力 +2（仅普通技能可强化）</div>
+        <div class="desc">${s.desc}</div>
+        <div class="flavor">同一招，你用得更熟了。</div>`;
+      d.onclick = () => {
+        enhanceSkillInPlace(s.id);
+        toast(s.name + " → Lv." + lv);
+        S.pendingLevelUps = Math.max(0, S.pendingLevelUps - 1);
+        processPostBattle(kind);
+      };
+    } else {
+      const s = opt;
+      d.className = "reward-card rarity-" + s.rarity;
+      const rn = {common:"普通", rare:"高级", legend:"传说"}[s.rarity];
+      const pathMark = s.path && PATHS[s.path] ? `<span style="color:${PATHS[s.path].color};font-size:10px;"> · ${PATHS[s.path].name}</span>` : "";
+      d.innerHTML = `<div class="name">${s.name} <span style="color:#6a6a78;font-size:11px;">${rn}</span>${pathMark}</div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合${s.req ? " · 需灵感"+s.req : ""}</div><div class="desc">${s.desc}</div><div class="flavor">${s.flavor}</div>`;
+      d.onclick = () => {
+        if (S.skills.indexOf(null) < 0) {
+          showReplaceSkill(s, () => {
+            S.pendingLevelUps = Math.max(0, S.pendingLevelUps - 1);
+            processPostBattle(kind);
+          });
+        } else {
+          addSkillToSlot(s);
+          S.pendingLevelUps = Math.max(0, S.pendingLevelUps - 1);
+          processPostBattle(kind);
+        }
+      };
+    }
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  const skip = document.createElement("button"); skip.className = "btn ghost"; skip.textContent = "跳过本次";
+  skip.onclick = () => {
+    S.pendingLevelUps = Math.max(0, S.pendingLevelUps - 1);
+    processPostBattle(kind);
+  };
+  actionbar.appendChild(skip);
+}
+function onBattleLose() {
+  if (hasTalent("t_immortal") && !S.immortalUsed) {
+    S.immortalUsed = true; S.immortalTriggered = true;
+    S.hp = Math.floor(S.maxHP * 0.3); updateTopbar();
+    addLog("不朽触发！你清醒了过来。", "special");
+    if (S.battle) { S.battle.phase = "player"; startPlayerTurn(); }
+    else { showEventResult(); }
+    return;
+  }
+  if (S.battle && hasEquip("amulet") && !S.battle.amuletUsed) {
+    S.battle.amuletUsed = true; S.hp = 1; updateTopbar();
+    addLog("护身符碎裂了。你清醒了过来。", "special");
+    S.battle.phase = "player"; startPlayerTurn();
+    return;
+  }
+  S.phase = "dead";
+  META.totalKills += S.kills;
+  META.maxInspiration = Math.max(META.maxInspiration, S.inspiration);
+  META.maxPaper = Math.max(META.maxPaper, S.paper);
+  META.bestFloor = Math.min(META.bestFloor, S.floor);
+  if (S.kills >= 30) unlockAchievement("killer");
+  if (S.inspiration >= 7) unlockAchievement("max_insp");
+  if (S.paper >= 200) unlockAchievement("rich");
+  unlockAchievement("first_death");
+  META.totalPlayTime += Math.floor((Date.now() - S.startTime) / 1000);
+  saveMeta(META); clearRun();
+  showEnd(false);
+}
+
+/* ============ 奖励 ============ */
+function showCardReward(kind) {
+  S.phase = "reward"; topbar.style.display = ""; updateTopbar();
+  const count = kind === "normal" ? 2 : 3;
+  const options = pickWeightedSkills(count, kind);
+  content.innerHTML = `<div class="reward-title">选择一项技能</div><div class="reward-list" id="reward-list"></div>`;
+  const list = $("reward-list");
+  options.forEach(s => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + s.rarity;
+    const rn = {common:"普通", rare:"高级", legend:"传说"}[s.rarity];
+    d.innerHTML = `<div class="name">${s.name} <span style="color:#6a6a78;font-size:11px;">${rn}</span></div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合${s.req ? " · 需灵感"+s.req : ""}</div><div class="desc">${s.desc}</div><div class="flavor">${s.flavor}</div>`;
+    d.onclick = () => { if (S.skills.indexOf(null) < 0) showReplaceSkill(s, kind); else { addSkillToSlot(s); afterReward(kind); } };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  if (S.adRerollFloor !== S.floor) {
+    const btnAd = document.createElement("button"); btnAd.className = "btn"; btnAd.textContent = "看广告重抽（每层限1次）"; btnAd.onclick = () => { S.adRerollFloor = S.floor; showAd(() => showCardReward(kind), 3); }; actionbar.appendChild(btnAd);
+  }
+  const skip = document.createElement("button"); skip.className = "btn ghost"; skip.textContent = "跳过"; skip.onclick = () => afterReward(kind); actionbar.appendChild(skip);
+}
+function showReplaceSkill(newSkill, kindOrCb) {
+  const done = typeof kindOrCb === "function" ? kindOrCb : () => afterReward(kindOrCb);
+  content.innerHTML = `<div class="reward-title">替换一个技能</div><div class="map-sub">选择替换为「${newSkill.name}」</div><div class="reward-list" id="replace-list"></div>`;
+  const list = $("replace-list");
+  S.skills.forEach((s, i) => {
+    if (!s) return;
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + s.rarity;
+    d.innerHTML = `<div class="name">${s.name}</div><div class="cost-line">消耗 ${s.cost} 专注 · 冷却 ${s.cd} 回合</div><div class="desc">${s.desc}</div>`;
+    d.onclick = () => { S.skills[i] = cloneSkill(newSkill, newSkill.enhance || 0); done(); };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "跳过"; back.onclick = done; actionbar.appendChild(back);
+}
+function showReplaceEquip(newEquip) {
+  content.innerHTML = `<div class="reward-title">替换一件装备</div><div class="map-sub">选择替换为「${newEquip.name}」</div><div class="reward-list" id="replace-list"></div>`;
+  const list = $("replace-list");
+  S.equips.forEach((e, i) => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + e.rarity;
+    d.innerHTML = `<div class="name">${e.name}</div><div class="desc">${e.desc}</div>`;
+    d.onclick = () => {
+      if (e.id === "stone_heart") { S.maxHP -= 20; S.hp = Math.min(S.hp, S.maxHP); }
+      S.equips[i] = newEquip;
+      if (newEquip.id === "stone_heart") { S.maxHP += 20; S.hp += 20; }
+      if (newEquip.id === "mirror") gainInspiration(1);
+      updateTopbar(); renderMap();
+    };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "放弃"; back.onclick = () => renderMap(); actionbar.appendChild(back);
+}
+function showReplaceEquipWithCallback(newEquip, callback) {
+  content.innerHTML = `<div class="reward-title">替换一件装备</div><div class="map-sub">选择替换为「${newEquip.name}」</div><div class="reward-list" id="replace-list"></div>`;
+  const list = $("replace-list");
+  S.equips.forEach((e, i) => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + e.rarity;
+    d.innerHTML = `<div class="name">${e.name}</div><div class="desc">${e.desc}</div>`;
+    d.onclick = () => {
+      if (e.id === "stone_heart") { S.maxHP -= 20; S.hp = Math.min(S.hp, S.maxHP); }
+      S.equips[i] = newEquip;
+      if (newEquip.id === "stone_heart") { S.maxHP += 20; S.hp += 20; }
+      if (newEquip.id === "mirror") gainInspiration(1);
+      updateTopbar(); callback();
+    };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const back = document.createElement("button"); back.className = "btn ghost"; back.textContent = "放弃"; back.onclick = () => { callback(); }; actionbar.appendChild(back);
+}
+function afterReward(kind) { if (kind === "elite" || kind === "boss") showEquipReward(kind); else nextStep(); }
+function showEquipReward(kind) {
+  const equips = pickWeightedEquips(2, kind);
+  if (equips.length === 0) { nextStep(); return; }
+  content.innerHTML = `<div class="reward-title">选择一件装备</div><div class="reward-list" id="reward-list"></div>`;
+  const list = $("reward-list");
+  equips.forEach(e => {
+    const d = document.createElement("div"); d.className = "reward-card rarity-" + e.rarity;
+    d.innerHTML = `<div class="name">${e.name}</div><div class="desc">${e.desc}</div><div class="flavor">${e.flavor||""}</div>`;
+    d.onclick = () => { if (S.equips.length >= MAX_EQUIPS) showReplaceEquipWithCallback(e, () => nextStep()); else { addEquip(e); nextStep(); } };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = ""; const skip = document.createElement("button"); skip.className = "btn ghost"; skip.textContent = "跳过"; skip.onclick = nextStep; actionbar.appendChild(skip);
+}
+const MAP_BRIDGES = [
+  "你沿着墙往前。灯管坏了一截。",
+  "门牌号跳了一下。你没在意。",
+  "远处有人拖椅子。椅子是空的。",
+  "你数自己的步子。数着数着乱了。",
+  "风从不通风的地方吹来。",
+  "你经过一扇半掩的门。里面没有声音。",
+];
+const EVENT_BRIDGES = [
+  "你顺着走廊往前走。\n脚步声只有自己的。\n然后你停住了。",
+  "转角后面有光。\n很弱。\n你走过去。",
+  "空气忽然变冷。\n你不知道为什么。\n你继续走。",
+  "墙上有划痕。\n你没有看。\n你继续走。\n然后你看见了别的东西。",
+  "你数着房间号。\n数字乱了。\n你不知道自己走了多远。",
+  "身后有风。\n没有窗户。\n你没有回头。",
+];
+function startEvent() {
+  S.phase = "eventBridge";
+  const bridge = rnd(EVENT_BRIDGES);
+  content.innerHTML = `<div style="padding:48px 24px;display:flex;flex-direction:column;justify-content:center;min-height:50vh;"><div class="${sanityClass()} show" style="text-align:center;font-size:14px;line-height:2.2;color:#8a8a98;white-space:pre-wrap;">${garbleText(bridge)}</div></div>`;
+  actionbar.innerHTML = "";
+  const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "继 续";
+  btn.onclick = () => showEventMain();
+  actionbar.appendChild(btn);
+}
+function showEventMain() {
+  S.phase = "event";
+  const ev = rnd(EVENTS);
+  content.innerHTML = `<div class="reward-title">${ev.title}</div><div class="event-scene">${garbleText(ev.scene)}</div><div class="btn-row" id="ev-choices"></div>`;
+  const box = $("ev-choices");
+  ev.choices.forEach(c => {
+    if (c.if && !c.if()) return;
+    const btn = document.createElement("button"); btn.className = "btn"; btn.textContent = c.label;
+    btn.onclick = () => { c.run(); if (S.hp <= 0) { S.hp = 0; onBattleLose(); return; } showEventResult(); };
+    box.appendChild(btn);
+  });
+  if (hasEquip("old_key") || hasEquip("chalk")) {
+    const btn = document.createElement("button"); btn.className = "btn ghost"; btn.textContent = "打开隐藏的东西（旧钥匙/粉笔）";
+    btn.onclick = () => { S.paper += 20; gainInspiration(1); addLogEvent("你找到了一个暗格。\n里面有一叠纸钱。\n还有一张纸条：\"别停下。\"\n获得20纸钱，灵感+1。"); showEventResult(); };
+    box.appendChild(btn);
+  }
+  if (hasEquip("bone_key")) {
+    const btn = document.createElement("button"); btn.className = "btn ghost"; btn.textContent = "用骨钥匙打开更深的门";
+    btn.onclick = () => { S.paper += 40; gainInspiration(2); addLogEvent("你用骨钥匙打开了一扇更深的门。\n里面有一叠纸钱。\n还有一封信，没有署名。\n获得40纸钱，灵感+2。"); showEventResult(); };
+    box.appendChild(btn);
+  }
+  actionbar.innerHTML = "";
+}
+function addLogEvent(t) { S.eventLog = t; }
+function showEventResult() {
+  content.innerHTML = `<div class="reward-title">结果</div><div class="event-scene">${garbleText(S.eventLog || "……")}</div>`;
+  actionbar.innerHTML = ""; const btn = document.createElement("button"); btn.className = "btn primary"; btn.textContent = "继续"; btn.onclick = nextStep; actionbar.appendChild(btn);
+}
+function startRest() {
+  S.phase = "rest";
+  content.innerHTML = `<div class="reward-title">休息</div><div class="event-scene">${garbleText("你停下脚步。\n靠墙坐下。\n你听见自己的心跳。")}</div><div class="btn-row" id="rest-choices"></div>`;
+  const box = $("rest-choices");
+  const healAmount = Math.floor(S.maxHP * 0.3);
+  const c1 = document.createElement("button"); c1.className = "btn"; c1.textContent = `恢复理智（+${healAmount}）`; c1.onclick = () => { S.hp = Math.min(S.maxHP, S.hp + healAmount); nextStep(); }; box.appendChild(c1);
+  const c2 = document.createElement("button"); c2.className = "btn"; c2.textContent = "灵感 +2"; c2.onclick = () => { gainInspiration(2); nextStep(); }; box.appendChild(c2);
+  const c3 = document.createElement("button"); c3.className = "btn ghost"; c3.textContent = "跳过"; c3.onclick = nextStep; box.appendChild(c3);
+  actionbar.innerHTML = "";
+}
+function startTreasure() {
+  S.phase = "treasure";
+  const pool = pickWeightedEquips(1, "treasure");
+  const e = pool[0];
+  if (!e) { nextStep(); return; }
+  content.innerHTML = `<div class="reward-title">宝箱</div><div class="event-scene">${garbleText("你打开宝箱。\n里面有一个装备。\n像是有人留给你的。")}</div><div class="reward-list" id="treasure-list"></div>`;
+  const list = $("treasure-list");
+  const d = document.createElement("div"); d.className = "reward-card rarity-" + e.rarity;
+  d.innerHTML = `<div class="name">${e.name}</div><div class="desc">${e.desc}</div><div class="flavor">${e.flavor||""}</div>`;
+  d.onclick = () => { if (S.equips.length >= MAX_EQUIPS) showReplaceEquipWithCallback(e, () => nextStep()); else { addEquip(e); nextStep(); } };
+  list.appendChild(d);
+  actionbar.innerHTML = ""; const skip = document.createElement("button"); skip.className = "btn ghost"; skip.textContent = "不拿"; skip.onclick = nextStep; actionbar.appendChild(skip);
+}
+
+/* ============ 流程 ============ */
+function nextStep() {
+  S.step++;
+  S.mapKey = null;
+  S.mapOptions = [];
+  if (S.step > S.maxStep) {
+    const idx = FLOOR_ORDER.indexOf(S.floor);
+    if (idx >= FLOOR_ORDER.length - 1) { showEnd(true); return; }
+    showSafeRoom(() => {
+      const nextFloor = FLOOR_ORDER[idx + 1];
+      showFloorTransition(nextFloor, () => {
+        S.floor = nextFloor; S.step = 0; S.mapKey = null; S.mapOptions = []; S.sideDoorUsed = false; gainInspiration(1);
+        updateTopbar();
+        const introText = FLOOR_INTRO[S.floor];
+        if (introText) { showFloorIntro(introText, () => renderMap()); return; }
+        renderMap();
+      });
+    });
+    return;
+  }
+  if (!S.paperDropShown && S.floor === 6 && S.step === 1) { S.paperDropShown = true; showPaperDrop(); return; }
+  if (S.step > 0 && S.step <= S.maxStep) {
+    showMapBridge(() => renderMap());
+    return;
+  }
+  renderMap();
+}
+function showMapBridge(cb) {
+  const line = MAP_BRIDGES[Math.floor(Math.random() * MAP_BRIDGES.length)];
+  S.phase = "mapBridge";
+  topbar.style.display = "";
+  updateTopbar();
+  content.innerHTML = `<div style="padding:48px 24px;display:flex;flex-direction:column;justify-content:center;min-height:40vh;"><div class="${sanityClass()} show" style="text-align:center;font-size:14px;line-height:2.2;color:#8a8a98;white-space:pre-wrap;">${garbleText(line)}</div></div>`;
+  actionbar.innerHTML = "";
+  const btn = document.createElement("button");
+  btn.className = "btn primary";
+  btn.textContent = "继 续";
+  btn.onclick = cb;
+  actionbar.appendChild(btn);
+}
+function showFloorIntro(text, callback) {
+  S.phase = "floorIntro";
+  topbar.style.display = "none";
+  actionbar.innerHTML = "";
+  // 按空行切段，可点击跳过
+  const parts = (text || "").split(/\n\n/).filter(s => s.trim());
+  const lines = parts.length > 1 ? parts : [text];
+  playStoryLines(lines, callback, { interval: 1000, btnLabel: "继 续" });
+}
+function showEnd(win) {
+  S.phase = win ? "win" : "dead";
+  topbar.style.display = "none";
+  const vig = $("vignette"); if (vig) vig.classList.remove("active");
+  if (win) sfx("win"); else sfx("lose");
+  const playTime = Math.floor((Date.now() - S.startTime) / 1000);
+  if (win) {
+    META.wins++;
+    META.maxInspiration = Math.max(META.maxInspiration, S.inspiration);
+    META.maxPaper = Math.max(META.maxPaper, S.paper);
+    if (playTime < 600) unlockAchievement("speedrun");
+    if (S.hp === 1) unlockAchievement("one_hp");
+    if (S.noSkillUsed) unlockAchievement("no_skills");
+    if (S.skills.filter(s => s && s.rarity === "legend").length >= 5) unlockAchievement("skill_master");
+    if (S.equips.filter(e => e.rarity === "legend").length >= 2) unlockAchievement("equip_master");
+    if (S.immortalTriggered) unlockAchievement("immortal_win");
+    if (S.inspiration >= 7) unlockAchievement("all_knowing");
+    unlockAchievement("first_win");
+    META.reviewUnlocked = true;
+    if (!META.fastestWin || playTime < META.fastestWin) META.fastestWin = playTime;
+    META.totalPlayTime += playTime;
+    saveMeta(META); clearRun();
+    content.innerHTML = `<div class="end-screen"><div class="verdict win">逃 出 去 了</div><div class="event-scene">你推开了门。\n门外是走廊。\n很黑。但你能看见路。\n你走了出去。\n你回头看。\n6楼窗户里，什么都没有。\n你走了。</div><div class="stat">到达楼层：<b>${S.floor}楼</b></div><div class="stat">等级：<b>Lv.${S.level}</b></div><div class="stat">纸钱：<b>${S.paper}</b></div><div class="stat">灵感：<b>${S.inspiration}</b></div><div class="stat">专长：<b>${S.bossSpecials.length}</b></div><div class="stat">装备：<b>${S.equips.length}/2</b></div><div class="stat">技能：<b>${S.skills.filter(s=>s).length}/5</b></div></div>`;
+  } else {
+    const loseText = (S.battle && S.battle.kind === "boss") ? BOSS_LOSE[S.floor] : "你崩溃了。\n你分不清哪些声音是真的。\n你不再是你了。";
+    const equipNames = S.equips.map(e => e.name).join("、") || "无";
+    const skillNames = S.skills.filter(Boolean).map(s => s.name).join("、") || "无";
+    const pathN = S.path && PATHS[S.path] ? PATHS[S.path].name : "未选";
+    const tips = [];
+    if (S.equips.length < 2) tips.push("装备栏未满——最多可带三件，纸钱铺和精英战能补强。");
+    if (S.inspiration < 3) tips.push("灵感偏低——意图看不清时，优先静思或带洞察类装备。");
+    if (S.level < 3 + (6 - S.floor)) tips.push("等级偏低——多打精英可加快升级。");
+    if (!S.bossSpecials.length && S.floor <= 4) tips.push("尚未获得 BOSS 专长——多挑战尽头有概率掉落。");
+    if (S.path === "powang" && !S.skills.some(s => s && s.path === "zhenhun")) tips.push("破妄路线缺防御技能——可考虑带一张定力牌。");
+    if (S.path === "zhenhun" && !S.skills.some(s => s && s.path === "powang")) tips.push("镇魂路线输出偏软——升级时留意冲击技能。");
+    const tipHtml = tips.length ? `<div class="map-sub" style="margin-top:16px;text-align:left;color:#6a6a78;">本局提示：<br>${tips.map(x=>"· "+x).join("<br>")}</div>` : "";
+    content.innerHTML = `<div class="end-screen"><div class="verdict lose">崩 溃</div><div class="event-scene">${garbleText(loseText).replace(/\n/g,"<br>")}</div>
+      <div class="stat">倒下位置：<b>${S.floor}楼 · ${FLOOR_NAMES[S.floor]||""}</b>${S.step >= S.maxStep ? " · 尽头" : " · 第"+(S.step+1)+"步"}</div>
+      <div class="stat">等级：<b>Lv.${S.level}</b> · 道路：<b>${pathN}</b></div>
+      <div class="stat">理智归零时：<b>${Math.max(0,Math.floor(S.hp))}/${S.maxHP}</b></div>
+      <div class="stat">纸钱 <b>${S.paper}</b> · 灵感 <b>${S.inspiration}</b> · 专长 <b>${S.bossSpecials.length}</b></div>
+      <div class="stat">装备：<b>${equipNames}</b></div>
+      <div class="stat">技能：<b>${skillNames}</b></div>
+      ${tipHtml}
+    </div>`;
+  }
+  actionbar.innerHTML = "";
+  if (!win && S.adReviveFloor !== S.floor) {
+    const btnRevive = document.createElement("button"); btnRevive.className = "btn primary"; btnRevive.textContent = "看广告复活（每层限1次，回30理智）";
+    btnRevive.onclick = () => {
+      S.adReviveFloor = S.floor;
+      showAd(() => {
+        S.hp = 30; S.phase = "map"; updateTopbar();
+        if (S.battle) { S.battle.phase = "player"; startPlayerTurn(); }
+        else { renderMap(); }
+      }, 3);
+    };
+    actionbar.appendChild(btnRevive);
+  }
+  if (win) {
+    const btnDouble = document.createElement("button"); btnDouble.className = "btn"; btnDouble.textContent = "看广告：纸钱翻倍";
+    btnDouble.onclick = () => { showAd(() => { S.paper *= 2; btnDouble.disabled = true; btnDouble.textContent = "已翻倍（" + S.paper + " 纸钱）"; }, 3); };
+    actionbar.appendChild(btnDouble);
+  }
+  const btn = document.createElement("button"); btn.className = "btn ghost"; btn.textContent = "回 到 标 题"; btn.onclick = () => location.reload(); actionbar.appendChild(btn);
+}
+
+/* ============ 天赋选择（3选） ============ */
+function showTalentSelect() {
+  S.phase = "talent"; topbar.style.display = "none";
+  const options = pickRandomTalents();
+  let picked = [];
+  content.innerHTML = `<div class="map-title" style="margin-bottom:6px;">选择天赋</div><div class="map-sub">选 ${MAX_TALENTS} 个</div><div class="reward-list" id="talent-list"></div>`;
+  const list = $("talent-list");
+  function refresh() {
+    list.innerHTML = "";
+    options.forEach(t => {
+      const d = document.createElement("div");
+      d.className = "reward-card rarity-" + (t.quality === "common" ? "common" : t.quality === "rare" ? "rare" : "legend");
+      if (picked.includes(t)) d.style.borderColor = "#c8a850";
+      const qn = {common:"普通", rare:"高级", legend:"传说"}[t.quality];
+      d.innerHTML = `<div class="name">${t.name} <span style="color:#6a6a78;font-size:11px;">${qn}</span></div>
+        <div class="desc">${t.desc}</div>
+        <div class="flavor">${t.flavor.replace(/\n/g,"<br>")}</div>`;
+      d.onclick = () => {
+        if (picked.includes(t)) { picked = picked.filter(x => x !== t); }
+        else if (picked.length < MAX_TALENTS) { picked.push(t); }
+        else { toast("最多 " + MAX_TALENTS + " 个"); }
+        refresh();
+        updateBtn();
+      };
+      list.appendChild(d);
+    });
+  }
+  function updateBtn() {
+    if (btnStart) btnStart.textContent = `开 始（已选 ${picked.length}/${MAX_TALENTS}）`;
+  }
+  refresh();
+  actionbar.innerHTML = "";
+  const btnStart = document.createElement("button"); btnStart.className = "btn primary"; btnStart.textContent = "开 始（已选 0/" + MAX_TALENTS + "）";
+  btnStart.onclick = () => { if (picked.length !== MAX_TALENTS) { toast("请选 " + MAX_TALENTS + " 个"); return; } showPathSelect(picked); };
+  actionbar.appendChild(btnStart);
+  const reroll = document.createElement("button"); reroll.className = "btn ghost"; reroll.textContent = "重 抽（看广告，每局限1次）";
+  reroll.onclick = () => { if (S.adTalentUsed) { toast("本局已用过"); return; } S.adTalentUsed = true; showAd(() => showTalentSelect(), 3); };
+  actionbar.appendChild(reroll);
+}
+
+
+function showPathSelect(talentPicked) {
+  S.phase = "path";
+  topbar.style.display = "none";
+  content.innerHTML = `<div class="map-title">选 择 道 路</div><div class="map-sub">你用什么方式活下去。\n选定后，升级会更偏向这条路。</div><div class="reward-list" id="path-list"></div>`;
+  const list = $("path-list");
+  let chosen = null;
+  Object.values(PATHS).forEach(p => {
+    const d = document.createElement("div");
+    d.className = "reward-card path-card " + p.id;
+    d.innerHTML = `<div class="name" style="color:${p.color};">${p.name}</div>
+      <div class="desc">${p.desc}</div>
+      <div class="flavor">${p.flavor}</div>
+      <div class="desc" style="margin-top:8px;color:#6a6a78;">Lv.3 ${p.passives[3].name}：${p.passives[3].desc}<br>Lv.6 ${p.passives[6].name}：${p.passives[6].desc}<br>Lv.9 ${p.passives[9].name}：${p.passives[9].desc}</div>`;
+    d.onclick = () => {
+      chosen = p.id;
+      list.querySelectorAll(".path-card").forEach(x => x.classList.remove("selected"));
+      d.classList.add("selected");
+      btnGo.disabled = false;
+      btnGo.textContent = "沿「" + p.name + "」走下去";
+    };
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  const btnGo = document.createElement("button");
+  btnGo.className = "btn primary";
+  btnGo.textContent = "请选择一条道路";
+  btnGo.disabled = true;
+  btnGo.onclick = () => {
+    if (!chosen) return;
+    S.path = chosen;
+    startRun(talentPicked);
+  };
+  actionbar.appendChild(btnGo);
+  const back = document.createElement("button");
+  back.className = "btn ghost";
+  back.textContent = "返回天赋";
+  back.onclick = () => showTalentSelect();
+  actionbar.appendChild(back);
+}
+
+/* ============ 开局（固定 2 技能 + 3 天赋） ============ */
+function startRun(picked) {
+  if (picked && picked.length) S.talents = picked.slice();
+  S.floor = 6; S.step = 0;
+  S.hp = 100; S.maxHP = 100;
+  S.inspiration = 0; S.paper = 0;
+  S.equips = []; S.battle = null;
+  S.immortalUsed = false;
+  S.adReviveFloor = -1; S.adRerollFloor = -1; S.adShopFloor = -1; S.adTalentUsed = false;
+  S.refusedPaper = false; S.paperDropShown = false; S.shopGone = false;
+  S.startTime = Date.now(); S.kills = 0;
+  S.noSkillUsed = true; S.immortalTriggered = false;
+  S.level = 1; S.exp = 0; S.expToNext = expNeeded(1);
+  S.bossPity = 0; S.bossSpecials = []; S.pendingLevelUps = 0; S.pathPassives = []; S.pathKillInspUsed = false; S.sideDoorUsed = false; S.mapKey = null; S.mapOptions = []; S.firstBattleDone = false; S.garbleHintShown = false;
+  S.skills = [cloneSkill(SKILLS.find(s => s.id === "punch"), 0), cloneSkill(SKILLS.find(s => s.id === "block"), 0), null, null, null];
+  if (hasTalent("t_insight")) gainInspiration(3);
+  if (hasTalent("t_pocket")) { S.paper += 25; }
+  if (hasTalent("t_steady")) { S.maxHP += 12; S.hp = S.maxHP; }
+  if (hasTalent("t_thick")) { S.maxHP += 8; S.hp = S.maxHP; }
+  if (hasTalent("t_memo")) gainInspiration(1);
+  META.runs++; saveMeta(META);
+  showPrologue();
+}
+function continueRun() {
+  const run = loadRun(); if (!run) return;
+  S.floor = run.floor; S.step = run.step;
+  S.hp = run.hp; S.maxHP = run.maxHP;
+  S.inspiration = run.inspiration; S.paper = run.paper;
+  S.skills = run.skills.map((entry, i) => {
+    if (!entry) return null;
+    if (typeof entry === 'string') return cloneSkill(skillById(entry), 0);
+    return cloneSkill(skillById(entry.id), entry.enhance || 0);
+  });
+  S.equips = run.equips.map(id => EQUIPS.find(e => e.id === id)).filter(Boolean);
+  S.talents = (run.talents || []).map(id => TALENTS.find(t => t.id === id)).filter(Boolean);
+  S.refusedPaper = run.refusedPaper || false;
+  S.shopGone = run.shopGone || false;
+  S.startTime = run.startTime || Date.now();
+  S.kills = run.kills || 0;
+  S.noSkillUsed = run.noSkillUsed !== undefined ? run.noSkillUsed : true;
+  S.immortalTriggered = run.immortalTriggered || false;
+  S.level = run.level || 1;
+  S.exp = run.exp || 0;
+  S.expToNext = run.expToNext || expNeeded(S.level);
+  S.bossPity = run.bossPity || 0;
+  S.bossSpecials = run.bossSpecials || [];
+  S.pendingLevelUps = run.pendingLevelUps || 0;
+  S.path = run.path || null;
+  S.pathPassives = run.pathPassives || [];
+  S.pathKillInspUsed = false;
+  S.sideDoorUsed = run.sideDoorUsed || false;
+  S.mapKey = null; S.mapOptions = [];
+  S.firstBattleDone = run.firstBattleDone || false;
+  S.garbleHintShown = run.garbleHintShown || false;
+  S.immortalUsed = false;
+  S.adReviveFloor = -1; S.adRerollFloor = -1; S.adShopFloor = -1; S.adTalentUsed = true;
+  S.battle = null; S.paperDropShown = true;
+  renderMap();
+}
+
+/* ============ 标题 ============ */
+function titleScreen() {
+  S.phase = "title"; topbar.style.display = "none";
+  const vig = $("vignette"); if (vig) vig.classList.remove("active");
+  const run = loadRun();
+  const showReviewBtn = META.reviewUnlocked || (META.heardLastWords && META.heardLastWords.length);
+  content.innerHTML = `<div class="title-screen">
+    <div class="sub">A NIGHT IN DORM 607</div>
+    <div class="main">607</div>
+    <div class="tag">从6楼到1楼。别回头。</div>
+    <div class="stats">游玩 ${META.runs} 局 · 通关 ${META.wins} 次 · 最远 ${META.bestFloor} 楼<br>击杀 ${META.totalKills} 只鬼 · 成就 ${META.achievements.length}/${ACHIEVEMENTS.length}</div>
+    <div class="title-links" id="title-links"></div>
+  </div>`;
+  const links = $("title-links");
+  const addLink = (label, fn) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    b.onclick = () => { sfx("click"); fn(); };
+    links.appendChild(b);
+  };
+  addLink("如何游玩", showHelp);
+  addLink("成就", showAchievements);
+  addLink("天赋图鉴", showTalentBook);
+  addLink("设置", showSettings);
+  if (showReviewBtn) addLink("回顾", showReview);
+  const soundBtn = document.createElement("button");
+  soundBtn.textContent = soundEnabled ? "音效：开" : "音效：关";
+  soundBtn.onclick = () => {
+    toggleSound();
+    soundBtn.textContent = soundEnabled ? "音效：开" : "音效：关";
+  };
+  links.appendChild(soundBtn);
+
+  actionbar.innerHTML = "";
+  actionbar.classList.add("title-mode");
+  if (run) {
+    const c = document.createElement("button");
+    c.className = "btn primary";
+    c.textContent = "继续游戏（" + run.floor + "楼）";
+    c.onclick = () => { sfx("click"); actionbar.classList.remove("title-mode"); continueRun(); };
+    actionbar.appendChild(c);
+  }
+  const btn = document.createElement("button");
+  btn.className = run ? "btn" : "btn primary";
+  btn.textContent = "新游戏";
+  btn.onclick = () => { sfx("click"); actionbar.classList.remove("title-mode"); showTalentSelect(); };
+  actionbar.appendChild(btn);
+}
+function showSettings() {
+  S.phase = "settings";
+  content.innerHTML = `<div class="map-title">设 置</div>
+    <div style="padding:8px 4px;">
+      <div class="settings-row"><span>文字速度</span><span id="spd-label">${textSpeed === 0.5 ? "慢" : textSpeed === 2 ? "快" : "正常"}</span></div>
+      <div class="settings-row"><span>跳过全部旁白</span><span id="skip-label">${skipStory ? "开" : "关"}</span></div>
+      <div class="map-sub" style="margin-top:12px;text-align:left;">跳过旁白后，开场、下楼、BOSS 开场等将直接显示确认按钮。<br>遗言仍可在「回顾」中阅读。</div>
+    </div>`;
+  actionbar.innerHTML = "";
+  const btnSpd = document.createElement("button"); btnSpd.className = "btn";
+  btnSpd.textContent = "切换文字速度";
+  btnSpd.onclick = () => {
+    textSpeed = textSpeed === 1 ? 2 : (textSpeed === 2 ? 0.5 : 1);
+    saveSettings();
+    $("spd-label").textContent = textSpeed === 0.5 ? "慢" : textSpeed === 2 ? "快" : "正常";
+  };
+  actionbar.appendChild(btnSpd);
+  const btnSkip = document.createElement("button"); btnSkip.className = "btn";
+  btnSkip.textContent = "切换：跳过旁白";
+  btnSkip.onclick = () => {
+    skipStory = !skipStory;
+    saveSettings();
+    $("skip-label").textContent = skipStory ? "开" : "关";
+  };
+  actionbar.appendChild(btnSkip);
+  const back = document.createElement("button"); back.className = "btn primary"; back.textContent = "返回";
+  back.onclick = titleScreen; actionbar.appendChild(back);
+}
+function showReview() {
+  S.phase = "review";
+  const heard = META.heardLastWords || [];
+  let html = `<div class="map-title">回 顾</div><div class="map-sub">你听过的声音</div>`;
+  if (!heard.length && !META.reviewUnlocked) {
+    html += `<div class="event-scene">还没有留下什么。</div>`;
+  } else {
+    const floors = [6,5,4,3,2,1];
+    floors.forEach(f => {
+      if (heard.includes(f) || META.reviewUnlocked) {
+        const words = BOSS_LAST_WORDS[f] || "……";
+        const name = BOSS_POOL[f] ? BOSS_POOL[f].name : f+"楼";
+        const locked = !heard.includes(f) && META.reviewUnlocked;
+        html += `<div class="reward-card" style="margin-bottom:10px;">
+          <div class="name">${f}楼 · ${name}</div>
+          <div class="flavor" style="white-space:pre-wrap;margin-top:8px;">${locked ? "（通关解锁全文）\n" : ""}${words}</div>
+        </div>`;
+      }
+    });
+    if (META.reviewUnlocked) {
+      html += `<div class="reward-card rarity-legend" style="margin-top:12px;"><div class="name">结局</div><div class="flavor" style="white-space:pre-wrap;margin-top:8px;">你推开了门。\n门外是走廊。\n很黑。但你能看见路。\n你走了出去。\n你回头看。\n6楼窗户里，什么都没有。\n你走了。</div></div>`;
+    }
+  }
+  content.innerHTML = html;
+  actionbar.innerHTML = "";
+  const back = document.createElement("button"); back.className = "btn primary"; back.textContent = "返回";
+  back.onclick = titleScreen; actionbar.appendChild(back);
+}
+function showHelp() {
+  S.phase = "help"; actionbar.classList.remove("title-mode");
+  content.innerHTML = `<div class="map-title">如 何 游 玩</div>
+  <div class="help-text">
+    <h3>目标</h3>
+    <ul>
+      <li>从 6 楼一路下到 1 楼，击败每层尽头的东西，逃出宿舍楼。</li>
+      <li>理智归零即崩溃。你还没真正变成「它们」之前，得先出去。</li>
+    </ul>
+    <h3>核心资源</h3>
+    <ul>
+      <li><b>理智</b>：你还清醒到什么程度。被鬼魂冲击、被事件撕扯都会掉。</li>
+      <li><b>灵感</b>：这栋楼在往你脑子里塞东西。灵感越高，你越能看见意图、弱点，甚至「暗处」。</li>
+      <li><b>经验 / 等级</b>：击败鬼魂获得经验。升级时才能学会新技能。</li>
+      <li><b>道路</b>：开局选择镇魂 / 破妄 / 通灵。升级技能会偏向该路，并在 3/6/9 级觉醒被动。</li>
+      <li><b>纸钱</b>：死人的货币。纸钱铺只卖装备与消耗品，不卖技能。</li>
+      <li><b>专注</b>：每回合基础 2 点，装备加成后最多 4 点。回合结束未用完的专注会化为定力。</li>
+      <li><b>技能强化</b>：普通技能最多强化 5 次，每次冲击/定力 +2；满级后不再出现在奖励中。不会抽到已有技能。</li>
+    </ul>
+    <h3>战斗</h3>
+    <ul>
+      <li>消耗专注使用技能。定力能挡下精神冲击。</li>
+      <li>灵感高时，你能提前看见它要做什么，甚至看穿弱点。</li>
+      <li>击败每层 BOSS 有低概率掉落「专长」（约 12%，4 次保底），永久被动。</li>
+      <li>桌面快捷键：<span class="kbd">1</span>–<span class="kbd">5</span> 技能，<span class="kbd">空格</span>/<span class="kbd">回车</span> 结束回合。</li>
+    </ul>
+    <h3>地图</h3>
+    <ul>
+      <li>每层 3 步后必有尽头 BOSS，无法绕开（持有骨钥匙时，非 1 楼可赌侧门）。</li>
+      <li>前三步可选战斗、事件、休息、宝箱、纸钱铺等。</li>
+      <li>灵感够高时，走廊里会出现别人看不见的「暗处」。</li>
+      <li>拒绝过纸钱的人，再进纸钱铺，店主会亲自「接待」。</li>
+    </ul>
+    <h3>提示</h3>
+    <ul>
+      <li>理智越低，文字越乱、屏幕越晃——你的眼睛在骗你。</li>
+      <li>每层结束后有安全屋。有人不想让你死在这里。</li>
+      <li>技能和装备可以替换。带不走的东西，就留在走廊里。</li>
+    </ul>
+  </div>`;
+  actionbar.innerHTML = "";
+  const back = document.createElement("button"); back.className = "btn primary"; back.textContent = "返回";
+  back.onclick = () => { sfx("click"); titleScreen(); }; actionbar.appendChild(back);
+}
+function showAchievements() {
+  content.innerHTML = `<div class="map-title">成 就</div><div class="map-sub">${META.achievements.length}/${ACHIEVEMENTS.length}</div><div class="reward-list" id="ach-list"></div>`;
+  const list = $("ach-list");
+  ACHIEVEMENTS.forEach(a => {
+    const unlocked = META.achievements.includes(a.id);
+    const d = document.createElement("div");
+    d.className = "reward-card" + (unlocked ? "" : " bought");
+    d.innerHTML = `<div class="name">${unlocked ? a.name : "？？？"}</div><div class="desc">${unlocked ? a.desc : "未解锁"}</div>`;
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  const back = document.createElement("button"); back.className = "btn primary"; back.textContent = "返回"; back.onclick = titleScreen; actionbar.appendChild(back);
+}
+function showTalentBook() {
+  content.innerHTML = `<div class="map-title">天 赋 图 鉴</div><div class="map-sub">共 ${TALENTS.length} 个</div><div class="reward-list" id="talent-book"></div>`;
+  const list = $("talent-book");
+  TALENTS.forEach(t => {
+    const d = document.createElement("div");
+    d.className = "reward-card rarity-" + (t.quality === "common" ? "common" : t.quality === "rare" ? "rare" : "legend");
+    const qn = {common:"普通", rare:"高级", legend:"传说"}[t.quality];
+    d.innerHTML = `<div class="name">${t.name} <span style="color:#6a6a78;font-size:11px;">${qn}</span></div>
+      <div class="desc">${t.desc}</div>
+      <div class="flavor">${t.flavor.replace(/\n/g,"<br>")}</div>`;
+    list.appendChild(d);
+  });
+  actionbar.innerHTML = "";
+  const back = document.createElement("button"); back.className = "btn primary"; back.textContent = "返回"; back.onclick = titleScreen; actionbar.appendChild(back);
+}
+
+/* ============ 键盘支持 ============ */
+document.addEventListener("keydown", e => {
+  if (S.phase === "battle" && S.battle && S.battle.phase === "player") {
+    if (e.key >= "1" && e.key <= "5") {
+      const idx = parseInt(e.key, 10) - 1;
+      if (S.skills[idx]) useSkill(idx);
+      e.preventDefault();
+    } else if (e.key === " " || e.key === "Enter") {
+      endPlayerTurn();
+      e.preventDefault();
+    }
+  }
+  if (e.key === "Escape") {
+    if (S.phase === "skills" || S.phase === "equips" || S.phase === "help") {
+      if (S.phase === "help") titleScreen();
+      else renderMap();
+    }
+  }
+});
+
+/* 首次交互解锁音频上下文（移动端需要） */
+document.body.addEventListener("touchstart", () => ensureAudio(), { once: true });
+document.body.addEventListener("click", () => ensureAudio(), { once: true });
+
+titleScreen();
+window.__dorm607Started = true;
+
+})();
+</script>
+</body>
+</html>
